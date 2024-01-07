@@ -18,6 +18,7 @@ TODO
 
 ## Wymagania 
 
+*Skopiowane ze strony prowadzącego:*
 
 **Prosty serwer protokołu HTTP zgodny ze specyfikacją RFC 2616 co najmniej w zakresie żądań: GET, HEAD, PUT, DELETE (2 osoby).**
 
@@ -35,6 +36,17 @@ TODO
   - sposób kompilacji, uruchomienia i obsługi programów projektu
 - Co najmniej dwa dni przed planowanym terminem zaliczania projektu należy wysłać e-mail doprowadzącego zajęcia zawierający nazwę oraz adres repozytorium projektu zaliczeniowego w systemie GitLab. W temacie wiadomości e-mail proszę wpisać: [SK2] Projekt zaliczeniowy. Uwaga: należy dodać prowadzącego zajęcia jak członka grupy projektu w systemie GitLab z uprawnieniami „Developer”.
 
+## Kryteria oceny projektu
+
+*Skopiowane ze strony prowadzącego:*
+
+- Poprawność implementacji projektu, a w szczególności komunikacji sieciowej.
+- Poprawność protokołu komunikacyjnego.
+- Zgodność funkcjonalności projektu z uzgodnionymi wymaganiami.
+- Przejrzystość i czytelność kodu.
+- Inicjatywa i pomysłowość w realizacji projektu.
+- Przestrzeganie zasad zaliczania projektu.
+
 ## Autorzy
 
 - Maciej Kaszkowiak 
@@ -42,5 +54,9 @@ TODO
 
 ## Licencja
 
-Projekt jest pod licencją MIT, zgodnie z plikiem LICENSE
+Projekt jest pod licencją MIT, zgodnie z plikiem LICENSE.
+
+## Odnośniki
+
+- [RFC 2616](https://datatracker.ietf.org/doc/html/rfc2616)
 
