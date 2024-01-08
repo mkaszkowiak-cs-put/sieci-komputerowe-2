@@ -1,6 +1,27 @@
 import eel
 import client
 import http_parser
+import json
+
+def encode_response(response: http_parser.Response):
+    """
+    Accepts a http_parser.Response object.
+
+    Returns a response encoded for GUI to display.
+    """
+
+    # I don't know the appropriate way to do this with Eel,
+    # so we'll just encode then decode a JSON object
+    return json.dumps({
+        "code": 200, # todo
+        "raw": response.raw,
+        "headers": response.headers,
+        "content_length": response.content_length,
+        "valid": response.valid,
+        "body": response.body,
+    })
+
+
 
 @eel.expose
 def helloworld():
@@ -11,7 +32,9 @@ def get_homepage():
     print("Calling GET /")
     response = client.get_homepage()
     print(response)
-    print(http_parser.parse_response(response))
+    
+    parsed_response = http_parser.parse_response(response)
+    return encode_response(parsed_response)
 
 # Remember that functions must be exposed prior to start
 eel.init('web')

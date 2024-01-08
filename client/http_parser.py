@@ -29,15 +29,15 @@ def parse_response(response):
     However, we recommend that applications, when parsing such headers, 
     recognize a single LF as a line terminator and ignore the leading CR.
     """
-    delimiter = response.find('\r\n\r\n')
+    delimiter, delimiter_length = response.find('\r\n\r\n'), 4
     if delimiter == -1:
-        delimiter = response.find('\n\n')
+        delimiter, delimiter_length = response.find('\n\n'), 2
     
     if delimiter == -1:
         # Cannot find a delimiter - invalid HTTP request, exiting
         return Response(response, False, None, None, None)
 
-    body = response[delimiter+4:]
+    body = response[delimiter+delimiter_length:]
     headers_raw = response[:delimiter]
 
     # Parse raw headers to header -> value pairs
@@ -46,12 +46,12 @@ def parse_response(response):
         # Ignore trailing \r
         header = header.strip('\r')
 
-        header_delimiter = header.find(':')
+        header_delimiter = header.find(': ')
         if header_delimiter == -1:
             continue  # Ignore the invalid header without :
 
         header_name = header[:header_delimiter]
-        header_body = header[header_delimiter+1:]
+        header_body = header[header_delimiter+2:]
 
         # This also ignores duplicate headers, storing the last value
         headers[header_name] = header_body

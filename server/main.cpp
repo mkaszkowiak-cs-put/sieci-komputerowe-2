@@ -110,7 +110,7 @@ int main(int argc, char **argv)
             printf("We have received: '%s'\n", buf);
 
             // Temporary 200 OK as an universal response
-            write(cfd, "HTTP/1.1 200 OK\nContent-Length: 2\nContent-Type: text/plain\n\nok", 66);
+            write(cfd, "HTTP/1.1 200 OK\nContent-Length: 2\nContent-Type: text/plain\n\nok", 62);
 
             close(cfd);
             exit(0);

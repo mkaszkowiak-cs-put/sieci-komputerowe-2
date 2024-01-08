@@ -11,6 +11,10 @@
     <script type="text/javascript">
         // Test if Eel connection is successful
         eel.helloworld();
+
+        function response_callback(response) {
+            document.querySelector("#response").innerHTML = response;
+        }
     </script>
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
@@ -54,7 +58,7 @@
         <section class="column">
             <h3>Czynności</h3>
             <ul>
-                <li><a href="#" onclick="eel.get_homepage()">
+                <li><a href="#" onclick="eel.get_homepage()(response_callback)">
                         GET
                     </a>
                 </li>
@@ -62,7 +66,7 @@
         </section>
         <section class="column">
             <h3>Output</h3>
-            <pre>
+            <pre id="response">
                 Output will appear there
             </pre>
         </section>
