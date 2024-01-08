@@ -8,50 +8,44 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <signal.h>
 
-#define BUFFER_SIZE 1024
+// Typical HTTP servers' header length limit is 4K - 8K bytes
+// We're limiting ours to 4096 bytes
+#define BUFFER_SIZE 4096
 
-/*
-void write_xd(int fd, const void *buf, size_t liczba) {
-    printf("Attempting to write '%s'\n", buf);
-    int bytes_left = liczba;
-    int read_bytes = 0;
-    int r;
-    while (read_bytes < liczba) {
-        r = write(fd, buf, liczba);
-        if (r <= 0) {
-            printf("exiting loop\n");
-            break;
-        }
-        printf("Sent out %d bytes\n", r);
-        read_bytes += r;
-        bytes_left -= r;
-    }
-    printf("Sent out the message!\n");
-}
-doesnt work for some reason
-*/
+// Accept connections on 0.0.0.0:2138
+#define SERVER_PORT 2138
+#define SERVER_IP INADDR_ANY
+
+// Currently unused
+#define MAX_CONCURRENT_CONNECTIONS 10
+
+#define MAX_QUEUED_CONNECTIONS 10
 
 int main(int argc, char **argv)
 {
+    // As our server runs on fork(), let's ignore SIGCHLD to prevent zombie processes
+    signal(SIGCHLD, SIG_IGN);
+
     socklen_t sl;
     int sfd, cfd, on = 1;
     struct sockaddr_in saddr, caddr;
 
-    // disable output buffering
+    // Disable output buffering to get real-time debug
     setbuf(stdout, NULL);
 
     saddr.sin_family = AF_INET;
-    saddr.sin_addr.s_addr = INADDR_ANY;
-    saddr.sin_port = htons(1234);
+    saddr.sin_addr.s_addr = SERVER_IP;
+    saddr.sin_port = htons(SERVER_PORT);
     sfd = socket(AF_INET, SOCK_STREAM, 0);
     setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on));
     bind(sfd, (struct sockaddr *)&saddr, sizeof(saddr));
-    listen(sfd, 10);
+    listen(sfd, MAX_QUEUED_CONNECTIONS);
+
+    printf("Listening on port %d\n", SERVER_PORT);
 
     char buf[BUFFER_SIZE];
-    char adam[] = "154020";
-    char maciej[] = "151856";
 
     while (1)
     {
@@ -102,7 +96,7 @@ int main(int argc, char **argv)
                     }
                     else
                     {
-                        printf("Found %c instead\n", buf[i]);
+                        //    printf("Found %c instead\n", buf[i]);
                     }
                 }
 
@@ -114,22 +108,10 @@ int main(int argc, char **argv)
             }
             printf("It's time to write!\n");
             printf("We have received: '%s'\n", buf);
-            // printf("waiting...\n");
-            // sleep(10);
-            //  make cfd non blocking
-            // int status = fcntl(cfd, F_SETFL, fcntl(cfd, F_GETFL, 0) | O_NONBLOCK);
-            if (strcmp(adam, buf) == 0)
-            {
-                write(cfd, "Adam\n", 5);
-            }
-            else if (strcmp(maciej, buf) == 0)
-            {
-                write(cfd, "Maciej\n", 7);
-            }
-            else
-            {
-                write(cfd, "Blad\n", 5);
-            }
+
+            // Temporary 200 OK as an universal response
+            write(cfd, "HTTP/1.1 200 OK\nContent-Length: 2\nContent-Type: text/plain\n\nok", 66);
+
             close(cfd);
             exit(0);
         }
