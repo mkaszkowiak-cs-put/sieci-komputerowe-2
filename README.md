@@ -1,10 +1,41 @@
 # Sieci komputerowe 2
 
-Prosty serwer i klient HTTP zaimplementowany w C++ na potrzeby laboratorium Sieci komputerowe 2 w semestrze zimowym 2023/2024.
+## Prosty serwer i klient HTTP 
+
+Projekt stworzony na potrzeby laboratorium Sieci komputerowe 2 w semestrze zimowym 2023/2024.
+
+Serwer jest zaimplementowany w C++ / C (TODO: zobaczy się) i został przetestowany pod systemem GNU/Linux (TODO: jakie distro?).
+
+Klient jest zaimplementowany w Python 3 i został przetestowany pod systemem Windows 10. 
 
 ## Budowanie projektu
 
-TODO
+
+### Serwer (GNU/Linux)
+
+```bash
+cd server
+./run.sh
+```
+
+### Klient (Windows)
+
+```bat
+cd client
+pip install -r requirements.txt
+run.cmd
+```
+
+Chromium służy jako front-end naszej aplikacji, jest wykorzystywane przez pakiet `eel`. **Przeglądarka nie wykonuje żadnych zapytań do serwera, odpowiada wyłącznie za aspekt wizualny.** Za komunikację z serwerem odpowiadają sockety.
+
+W przypadku błędu `OSError: Can't find Google Chrome/Chromium installation`, klient musi mieć zainstalowanego Chrome. 
+
+Jeśli program nie wykrywa ścieżki do Chrome, problem można rozwiązać następującym snippetem:
+
+```python
+import eel.browsers
+eel.browsers.set_path('chrome', '/path/to/your/exe')
+```
 
 ## Opis protokołu HTTP
 
@@ -59,4 +90,4 @@ Projekt jest pod licencją MIT, zgodnie z plikiem LICENSE.
 ## Odnośniki
 
 - [RFC 2616](https://datatracker.ietf.org/doc/html/rfc2616)
-
+- [Projekty zaliczeniowe z laboratorium sieci komputerowych II](https://www.cs.put.poznan.pl/mkalewski/edu/sk/doc/zadania.pdf)
