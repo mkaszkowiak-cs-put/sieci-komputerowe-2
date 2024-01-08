@@ -6,7 +6,7 @@ Projekt stworzony na potrzeby laboratorium Sieci komputerowe 2 w semestrze zimow
 
 Serwer jest zaimplementowany w C++ / C (TODO: zobaczy się) i został przetestowany pod systemem GNU/Linux (TODO: jakie distro?).
 
-Klient jest zaimplementowany w Python 3 i został przetestowany pod systemem Windows 10. 
+Klient jest zaimplementowany w Python 3.9 i został przetestowany pod systemem Windows 10. 
 
 ## Budowanie projektu
 
@@ -43,7 +43,29 @@ TODO
 
 ## Opis implementacji, w tym krótki opis zawartości plików źródłowych
 
+### Serwer
+
 TODO
+
+#### Struktura plików 
+
+TODO 
+
+### Klient 
+
+Klient jest zaimplementowany w Python 3.9. Do komunikacji z serwerem posługuje się biblioteką `sockets`, która pod Windowsem wykorzystuje interfejs WinSock. GUI wykorzystuje bibliotekę `eel`, która jest Pythonowym odpowiednikiem Electrona.
+
+TODO - pewnie się zmieni + do dokończenia
+
+#### Struktura plików
+
+- **main.py** - glówna część, uruchomiająca GUI oraz przetwarzająca jego komendy
+- **http_parser.py** - parser do przetwarzania raw payloadu HTTP w obiekt z danymi
+- **client.py** - klient oparty o sockets do komunikacji ze serwerem 
+- web/ - pliki serwowane przez eel
+  - **web/index.html** - frontend klienta
+
+TODO - pewnie się zmieni + do dokończenia
 
 ---
 

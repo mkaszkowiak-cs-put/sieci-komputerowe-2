@@ -10,6 +10,7 @@ class Response:
     body: Optional[str] 
     headers: Optional[dict]
     
+    # TODO: Status code - is it needed?
 
     def __str__(self):
         txt = f"[*] {'Valid' if self.valid else 'Invalid'} response\n"
@@ -64,4 +65,6 @@ def parse_response(response):
 
     # We don't check if Content-Length matches, 
     # let's just live in our happy little world without checks
+    # and without trimming the remaining content past Content-Length
+
     return Response(response, True, content_length, body, headers)
