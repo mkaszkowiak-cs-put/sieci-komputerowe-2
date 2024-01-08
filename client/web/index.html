@@ -66,6 +66,12 @@
             background: lightgrey;
             font-family: monospace;
         }
+
+        @media screen and (max-width: 800px) {
+            .row {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 
@@ -76,11 +82,34 @@
         <section class="column">
             <h3>Czynności</h3>
             <ul>
-                <li><a href="#" onclick="eel.get_homepage()(response_callback)">
+                <li>
+                    <a href="#" onclick="eel.get_homepage()(response_callback)">
                         GET /
                     </a>
                 </li>
+                <li>
+                    <a href="#">
+                        HEAD - TODO
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        PUT - Dodaj plik TODO
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        DELETE - Dodaj plik TODO
+                    </a>
+                </li>
             </ul>
+
+            <br><br>
+
+            <strong>[Input: Wgraj plik TODO]</strong><br>
+            <strong>Aktualnie wgrany plik: TODO</strong><br>
+            <strong>[Input: Nazwa pliku TODO]</strong><br>
+
         </section>
         <section class="column">
             <h3>Odpowiedź serwera</h3>
