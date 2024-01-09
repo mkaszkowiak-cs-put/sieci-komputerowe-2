@@ -16,8 +16,11 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 // Typical HTTP servers' header length limit is 4KiB - 8KiB
-// We're limiting ours to 4096 bytes (4 KiB)
+// We're limiting ours to a single buffer, up to 4096 bytes (4 KiB)
 #define BUFFER_SIZE 4096
+
+// Limit requests to 50 MiB to prevent attacks
+#define MAXIMUM_CONTENT_LENGTH 1024 * 1024 * 50
 
 // Accept connections on 0.0.0.0:2138
 #define SERVER_PORT 2138
@@ -171,7 +174,11 @@ int main(int argc, char **argv)
         printf("\nRaw header data:\n>>>>>\n%s\n<<<<<\n", header_buf);
 
         // Let's parse our headers
-        char *method = strtok(header_buf, " ");
+        // We need to copy the buffer, as strtok and strtok_r are DESTRUCTIVE!
+        // They replace found delimiters with \0
+        char header_buf2[BUFFER_SIZE];
+        memcpy(header_buf2, header_buf, BUFFER_SIZE);
+        char *method = strtok(header_buf2, " ");
         char *url = strtok(NULL, " ");
         char *version = strtok(NULL, " ");
 
@@ -181,8 +188,76 @@ int main(int argc, char **argv)
             close(cfd);
             exit(0);
         }
-
         printf("%s %s %s\n", method, url, version);
+
+        // Client can not adhere to RFC specs, and send LF instead of CRLF
+        // But according to RFC we should handle this case
+        // I'll do it this way instead of splitting by \n, to avoid trailing \r
+        char *saveptr = NULL;
+        char *header = NULL;
+        char header_buf3[BUFFER_SIZE];
+        memcpy(header_buf3, header_buf, BUFFER_SIZE);
+        if (header_delimiter_size == 4)
+        {
+            // Ignore first line, as it's GET / HTTP1.1
+            // Splitting with strtok_r instead of strtok allows us to nest strtoks
+            header = strtok_r(header_buf3, "\r\n", &saveptr);
+            printf("test %s", header);
+            header = strtok_r(NULL, "\r\n", &saveptr);
+            printf("test %s", header);
+        }
+        else
+        {
+            header = strtok_r(header_buf3, "\n", &saveptr);
+            header = strtok_r(NULL, "\n", &saveptr);
+        }
+
+        printf("\n\nParsing headers...\n");
+        while (1)
+        {
+            if (header == NULL)
+            {
+                break;
+            }
+            int header_size = strlen(header);
+            if (header_size == 0)
+            {
+                break;
+            }
+
+            char header_copy[BUFFER_SIZE];
+            strncpy(header_copy, header, BUFFER_SIZE);
+
+            // Header now should hold a key:value pair
+            // For the sake of simplicity, we're going to assume that there is a single trailing space
+            // Though the RFC spec says that there may be 0 or multiple trailing spaces
+
+            char *key = strtok(header_copy, ": ");
+            char *value = strtok(NULL, ": ");
+
+            // Parser currently only reads up to first ' ', due to strtok's behaviour
+            // TODO: fix this
+            // https://stackoverflow.com/questions/60803240/so-strtok-is-destructive
+            if (header_delimiter_size == 4)
+            {
+
+                header = strtok_r(NULL, "\r\n", &saveptr);
+            }
+            else
+            {
+                header = strtok_r(NULL, "\n", &saveptr);
+            }
+
+            if (key == NULL || value == NULL)
+            {
+                printf("Header with NULL key or value, skipping...\n");
+                continue;
+            }
+
+            printf("[Header] %s: %s\n", key, value);
+        }
+        printf("Headers parsed.\n");
+
         // TODO: check content length header
 
         // Check if our method is supported
@@ -279,15 +354,7 @@ int main(int argc, char **argv)
         fclose(body_stream);
         free(body_buf);
 
-        // TODO: parse headers - note RFC below
-        /*
-        Each header field consists of a name followed by a colon (":") and the field value.
-        Field names are case-insensitive.
-        The field value MAY be preceded by any amount of LWS, though a single SP is preferred.
-        */
-
         // TODO: read body limited to Content-Length
-        // TODO: parse body
         // TODO: appropriate function calls
         // TODO: generate response
 
