@@ -4,33 +4,50 @@
 
 Projekt stworzony na potrzeby laboratorium Sieci komputerowe 2 w semestrze zimowym 2023/2024.
 
+## Serwer (GNU/Linux)
+
 Serwer jest zaimplementowany w C++ / C (TODO: zobaczy się) i został przetestowany pod systemem GNU/Linux (TODO: jakie distro?).
 
-Klient jest zaimplementowany w Python 3.9 i został przetestowany pod systemem Windows 10. 
+TODO
 
-## Budowanie projektu
+### Struktura plików
 
+TODO
 
-### Serwer (GNU/Linux)
+### Uruchomienie 
 
 ```bash
 cd server
 ./run.sh
 ```
 
-### Klient (Windows)
+## Klient (Windows)
 
+Klient jest zaimplementowany w Python 3.9 i został przetestowany pod systemem Windows 10. 
+
+Do komunikacji z serwerem posługuje się biblioteką `sockets`, która pod Windowsem wykorzystuje interfejs WinSock. GUI wykorzystuje bibliotekę `eel`, która jest Pythonowym odpowiednikiem Electrona.
+
+Pakiet `eel` do wyświetlania GUI wykorzystuje Chromium. **Przeglądarka nie wykonuje żadnych zapytań do serwera, odpowiada wyłącznie za aspekt wizualny.** Za komunikację z serwerem odpowiadają wyłącznie sockety, zgodnie z wymaganiami zadania.
+
+### Struktura plików
+
+- **main.py** - glówna część, uruchomiająca GUI oraz przetwarzająca jego komendy
+- **http_parser.py** - parser do przetwarzania raw payloadu HTTP w obiekt z danymi
+- **client.py** - klient oparty o sockets do komunikacji ze serwerem 
+- web/ - pliki serwowane przez eel
+  - **web/index.html** - frontend klienta
+
+### Uruchomienie
 ```bat
 cd client
 pip install -r requirements.txt
 run.cmd
 ```
-
-Chromium służy jako front-end naszej aplikacji, jest wykorzystywane przez pakiet `eel`. **Przeglądarka nie wykonuje żadnych zapytań do serwera, odpowiada wyłącznie za aspekt wizualny.** Za komunikację z serwerem odpowiadają sockety.
+### Często spotykane błędy
 
 W przypadku błędu `OSError: Can't find Google Chrome/Chromium installation`, klient musi mieć zainstalowanego Chrome. 
 
-Jeśli program nie wykrywa ścieżki do Chrome, problem można rozwiązać następującym snippetem:
+Jeśli program pomimo tego nie wykrywa ścieżki do Chrome, problem można rozwiązać następującym snippetem:
 
 ```python
 import eel.browsers
@@ -40,32 +57,6 @@ eel.browsers.set_path('chrome', '/path/to/your/exe')
 ## Opis protokołu HTTP
 
 TODO
-
-## Opis implementacji, w tym krótki opis zawartości plików źródłowych
-
-### Serwer
-
-TODO
-
-#### Struktura plików 
-
-TODO 
-
-### Klient 
-
-Klient jest zaimplementowany w Python 3.9. Do komunikacji z serwerem posługuje się biblioteką `sockets`, która pod Windowsem wykorzystuje interfejs WinSock. GUI wykorzystuje bibliotekę `eel`, która jest Pythonowym odpowiednikiem Electrona.
-
-TODO - pewnie się zmieni + do dokończenia
-
-#### Struktura plików
-
-- **main.py** - glówna część, uruchomiająca GUI oraz przetwarzająca jego komendy
-- **http_parser.py** - parser do przetwarzania raw payloadu HTTP w obiekt z danymi
-- **client.py** - klient oparty o sockets do komunikacji ze serwerem 
-- web/ - pliki serwowane przez eel
-  - **web/index.html** - frontend klienta
-
-TODO - pewnie się zmieni + do dokończenia
 
 ---
 
@@ -89,7 +80,7 @@ TODO - pewnie się zmieni + do dokończenia
   - sposób kompilacji, uruchomienia i obsługi programów projektu
 - Co najmniej dwa dni przed planowanym terminem zaliczania projektu należy wysłać e-mail doprowadzącego zajęcia zawierający nazwę oraz adres repozytorium projektu zaliczeniowego w systemie GitLab. W temacie wiadomości e-mail proszę wpisać: [SK2] Projekt zaliczeniowy. Uwaga: należy dodać prowadzącego zajęcia jak członka grupy projektu w systemie GitLab z uprawnieniami „Developer”.
 
-## Kryteria oceny projektu
+### Kryteria oceny projektu
 
 *Skopiowane ze strony prowadzącego:*
 
@@ -100,6 +91,10 @@ TODO - pewnie się zmieni + do dokończenia
 - Inicjatywa i pomysłowość w realizacji projektu.
 - Przestrzeganie zasad zaliczania projektu.
 
+## Potencjalne usprawnienia
+
+- Ograniczenie liczby jednoczesnych połączeń - aktualnie bardzo łatwo jest zDoSować nasz serwer
+
 ## Autorzy
 
 - Maciej Kaszkowiak 
@@ -107,7 +102,7 @@ TODO - pewnie się zmieni + do dokończenia
 
 ## Licencja
 
-Projekt jest pod licencją MIT, zgodnie z plikiem LICENSE.
+Projekt jest objęty licencją MIT - szczegóły w pliku LICENSE.
 
 ## Odnośniki
 
