@@ -155,7 +155,7 @@ int main(int argc, char **argv)
             exit(0);
         }
 
-        printf("Header delimiter was found at %d with size %d\n", header_delimiter_found, header_delimiter_size);
+        printf("Header delimiter was found at pos %d of size %d\n", header_delimiter_found, header_delimiter_size);
 
         // Copy headers to a separate buffer, we'll reuse buf later on
         char header_buf[BUFFER_SIZE];
@@ -197,13 +197,17 @@ int main(int argc, char **argv)
             fflush(body_stream);
         }
 
-        // TODO: read headers
+        // If "Expect: 100-continue" header exists, we need to send a 100 Continue response
+        // This is used for transmitting files
+        char *continue100 = "\nExpect: 100-continue";
+        if (strstr(header_buf, continue100) != NULL)
+        {
+            write(cfd, "HTTP/1.1 100 Continue\r\n\r\n", 25);
+            printf("100 Continue sent due to Except: 100-continue header.\n");
+        }
 
-        // We can now read remaining data.
-        // TODO: send 100 Continue only if header "Expect: 100-continue" exists
-
-        write(cfd, "HTTP/1.1 100 Continue\r\n\r\n", 25);
-        printf("100 Continue sent, reading bytes:");
+                // We can now read remaining data.
+        printf("\nReading body bytes:");
         while (1)
         {
             // Read body
@@ -234,13 +238,14 @@ int main(int argc, char **argv)
         fclose(body_stream);
         free(body_buf);
 
-        // TODO: parse headers (note: )
+        // TODO: parse headers - note RFC below
         /*
         Each header field consists of a name followed by a colon (":") and the field value.
         Field names are case-insensitive.
         The field value MAY be preceded by any amount of LWS, though a single SP is preferred.
         */
-        // TODO: read body according to Content-Length
+
+        // TODO: read body limited to Content-Length
         // TODO: parse body
         // TODO: appropriate function calls
         // TODO: generate response
