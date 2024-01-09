@@ -202,9 +202,7 @@ int main(int argc, char **argv)
             // Ignore first line, as it's GET / HTTP1.1
             // Splitting with strtok_r instead of strtok allows us to nest strtoks
             header = strtok_r(header_buf3, "\r\n", &saveptr);
-            printf("test %s", header);
             header = strtok_r(NULL, "\r\n", &saveptr);
-            printf("test %s", header);
         }
         else
         {
@@ -225,6 +223,7 @@ int main(int argc, char **argv)
                 break;
             }
 
+            // Currently redundant, TODO: check if will be used
             char header_copy[BUFFER_SIZE];
             strncpy(header_copy, header, BUFFER_SIZE);
 
