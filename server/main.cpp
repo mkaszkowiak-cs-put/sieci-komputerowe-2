@@ -156,6 +156,19 @@ int main(int argc, char **argv)
 
         printf("Header delimiter was found at %d with size %d\n", header_delimiter_found, header_delimiter_size);
 
+        // Copy headers to a separate buffer, we'll reuse buf later on
+        char header_buf[BUFFER_SIZE];
+        int header_size = header_delimiter_found;
+        if (header_size < 0)
+        {
+            printf("Invalid request: empty header section, closing the connection.\n");
+            close(cfd);
+            exit(0);
+        }
+
+        strncpy(header_buf, buf, header_size);
+        printf("\nRaw header data:\n>>>>>\n%s\n<<<<<\n", header_buf);
+
         // Let's use a dynamic buffer for storing the body content.
         //
         // In our use-case, we could pipe the body content straight into a file,
@@ -220,7 +233,12 @@ int main(int argc, char **argv)
         fclose(body_stream);
         free(body_buf);
 
-        // TODO: parse headers
+        // TODO: parse headers (note: )
+        /*
+        Each header field consists of a name followed by a colon (":") and the field value.
+        Field names are case-insensitive.
+        The field value MAY be preceded by any amount of LWS, though a single SP is preferred.
+        */
         // TODO: read body according to Content-Length
         // TODO: parse body
         // TODO: appropriate function calls
@@ -228,11 +246,11 @@ int main(int argc, char **argv)
 
         // For now, we'll just ignore the body
 
-        printf("Raw request data:\n>>>>>\n%s\n<<<<<\n", buf);
-        printf("Attempting to send a response.\n");
+        printf("Attempting to send a response...\n");
         // Temporary 200 OK as an universal response
         write(cfd, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: text/plain\r\n\r\nok", 66);
 
+        printf("Response sent, closing cfd!\n\n");
         close(cfd);
         exit(0);
     }

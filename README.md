@@ -8,6 +8,12 @@ Projekt stworzony na potrzeby laboratorium Sieci komputerowe 2 w semestrze zimow
 
 Serwer jest zaimplementowany w C++ / C (TODO: zobaczy się) i został przetestowany pod systemem GNU/Linux (TODO: jakie distro?).
 
+Serwer został zaimplementowany zgodnie z RFC 2616, przez co można z niego korzystać za pośednictwem serwera lub curl, np:
+
+```
+curl --header "Content-Type: application/octet-stream" -i -X PUT --data-binary @plik localhost:2138
+```
+
 TODO
 
 ### Struktura plików

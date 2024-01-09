@@ -47,12 +47,12 @@ def parse_response(response):
         # Ignore trailing \r
         header = header.strip('\r')
 
-        header_delimiter = header.find(': ')
+        header_delimiter = header.find(':')
         if header_delimiter == -1:
             continue  # Ignore the invalid header without :
 
         header_name = header[:header_delimiter]
-        header_body = header[header_delimiter+2:]
+        header_body = header[header_delimiter+1:].lstrip()
 
         # This also ignores duplicate headers, storing the last value
         headers[header_name] = header_body
