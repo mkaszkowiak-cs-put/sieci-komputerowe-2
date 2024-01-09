@@ -9,6 +9,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/time.h>
 
 // Not defined in C
 // TODO: remove if we move to c++ and use std::min instead
