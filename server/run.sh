@@ -1,4 +1,4 @@
 #!/bin/bash
-g++ -Wall -o server.o main.cpp 
+gcc -Wall -o server.o main.c
 chmod +x server.o
 ./server.o

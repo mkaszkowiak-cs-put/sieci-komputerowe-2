@@ -6,7 +6,7 @@ Projekt stworzony na potrzeby laboratorium Sieci komputerowe 2 w semestrze zimow
 
 ## Serwer (GNU/Linux)
 
-Serwer jest zaimplementowany w C++ / C (TODO: zobaczy się) i został przetestowany pod systemem GNU/Linux (TODO: jakie distro?).
+Serwer jest zaimplementowany w C i został przetestowany pod systemem GNU/Linux (TODO: jakie distro?).
 
 Serwer został zaimplementowany zgodnie z RFC 2616, przez co można z niego korzystać za pośednictwem serwera lub curl, np:
 
