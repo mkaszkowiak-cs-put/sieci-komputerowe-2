@@ -170,6 +170,47 @@ int main(int argc, char **argv)
         strncpy(header_buf, buf, header_size);
         printf("\nRaw header data:\n>>>>>\n%s\n<<<<<\n", header_buf);
 
+        // Let's parse our headers
+        char *method = strtok(header_buf, " ");
+        char *url = strtok(NULL, " ");
+        char *version = strtok(NULL, " ");
+
+        if (method == NULL || url == NULL || version == NULL)
+        {
+            printf("Invalid request: not found method OR url OR version, closing the connection.\n");
+            close(cfd);
+            exit(0);
+        }
+
+        printf("%s %s %s\n", method, url, version);
+        // TODO: check content length header
+
+        // Check if our method is supported
+        // We use strncmp and strlen for memory safe comparison
+        if (strncmp(method, "GET", 3) == 0 && strlen(method) == 3)
+        {
+            printf("GET is supported!\n");
+        }
+        else if (strncmp(method, "PUT", 3) == 0 && strlen(method) == 3)
+        {
+            printf("PUT is supported!\n");
+        }
+        else if (strncmp(method, "HEAD", 4) == 0 && strlen(method) == 4)
+        {
+            printf("HEAD is supported!\n");
+        }
+        else if (strncmp(method, "DELETE", 6) == 0 && strlen(method) == 6)
+        {
+            printf("DELETE is supported!\n");
+        }
+        else
+        {
+            printf("Invalid request: unsupported HTTP method '%s', closing the connection.\n", method);
+            write(cfd, "HTTP/1.1 405 Method Not Allowed\r\n\r\n", 35);
+            close(cfd);
+            exit(0);
+        }
+
         // Let's use a dynamic buffer for storing the body content.
         //
         // In our use-case, we could pipe the body content straight into a file,
@@ -206,7 +247,7 @@ int main(int argc, char **argv)
             printf("100 Continue sent due to Except: 100-continue header.\n");
         }
 
-                // We can now read remaining data.
+        // We can now read remaining data.
         printf("\nReading body bytes:");
         while (1)
         {
