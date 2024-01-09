@@ -107,7 +107,6 @@ int main(int argc, char **argv)
                 if (
                     buf[i] == '\r' && buf[i + 1] == '\n' && buf[i + 2] == '\r' && buf[i + 3] == '\n')
                 {
-                    printf("Header delimiter [CRLF CRLF] found at byte %d!\n", i);
                     header_delimiter_found = i;
                     header_delimiter_size = 4;
                     break;
@@ -125,17 +124,21 @@ int main(int argc, char **argv)
                         if (
                             buf[i + x] == '\n' && buf[i + x + 1] == '\n')
                         {
-                            printf("Header delimiter [LF LF] found at byte %d!\n", i + x);
                             header_delimiter_found = i + x;
                             header_delimiter_size = 2;
                             break;
                         }
                     }
+
+                    if (header_delimiter_found != -1)
+                    {
+                        break;
+                    }
                 }
             }
 
             buffer_at += read_n;
-            // Once we found the body, process it into a different loop
+            // Once we found the body, process it in a different loop
             if (header_delimiter_found != -1)
             {
                 break;
@@ -145,11 +148,77 @@ int main(int argc, char **argv)
         // Ensure that we found the headers in the first BUFFER_SIZE bytes
         if (header_delimiter_found == -1)
         {
-            printf("We have received: '%s'\n", buf);
             printf("Invalid request: limiter was not found in the first %d bytes, closing the connection.\n", BUFFER_SIZE);
+            printf("Raw request data:\n>>>>>\n%s\n<<<<<\n", buf);
             close(cfd);
             exit(0);
         }
+
+        printf("Header delimiter was found at %d with size %d\n", header_delimiter_found, header_delimiter_size);
+
+        // Let's use a dynamic buffer for storing the body content.
+        //
+        // In our use-case, we could pipe the body content straight into a file,
+        // as we're only dealing with it on a PUT request, which should create a file.
+        // It would take less RAM, but creating a dynamic buffer is more flexible.
+        char *body_buf;
+        size_t body_buf_size = 0;
+        FILE *body_stream;
+
+        body_stream = open_memstream(&body_buf, &body_buf_size);
+
+        // There can still be some body data left in buf! Let's read it.
+        // Determine position of first byte of body in buf
+        int existing_body_start_pos = header_delimiter_found + header_delimiter_size;
+        // Check how many bytes we can still read from buf
+        int existing_body_size = buffer_at - existing_body_start_pos;
+
+        if (existing_body_size > 0)
+        {
+            // Get pointer to the first byte of body
+            char *existing_body_pointer = buf + existing_body_start_pos;
+            // Read it to our dynamic body buffer
+            fwrite(existing_body_pointer, existing_body_size, 1, body_stream);
+            // Flush our body stream
+            fflush(body_stream);
+        }
+
+        // TODO: read headers
+
+        // We can now read remaining data.
+        // TODO: send 100 Continue only if header "Expect: 100-continue" exists
+
+        write(cfd, "HTTP/1.1 100 Continue\r\n\r\n", 25);
+        printf("100 Continue sent, reading bytes:");
+        while (1)
+        {
+            // Read body
+            read_n = read(cfd, buf, BUFFER_SIZE);
+            printf(" %d", read_n);
+
+            // No bytes left to read? Exit the loop
+            if (read_n <= 0)
+            {
+                break;
+            }
+
+            fwrite(buf, read_n, 1, body_stream);
+        }
+        printf("...done\n");
+        fflush(body_stream);
+
+        if (body_buf_size > 0)
+        {
+            printf("\nRaw body data:\n>>>>>\n%s\n<<<<<\n", body_buf);
+        }
+        else
+        {
+            printf("\nEmpty body.\n");
+        }
+
+        // Free resources
+        fclose(body_stream);
+        free(body_buf);
 
         // TODO: parse headers
         // TODO: read body according to Content-Length
@@ -158,12 +227,11 @@ int main(int argc, char **argv)
         // TODO: generate response
 
         // For now, we'll just ignore the body
-        printf("It's time to write!\n");
-        printf("We have received: '%s'\n", buf);
-        printf("Header delimiter was found at %d with size %d", header_delimiter_found, header_delimiter_size);
 
+        printf("Raw request data:\n>>>>>\n%s\n<<<<<\n", buf);
+        printf("Attempting to send a response.\n");
         // Temporary 200 OK as an universal response
-        write(cfd, "HTTP/1.1 200 OK\nContent-Length: 2\nContent-Type: text/plain\n\nok", 62);
+        write(cfd, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: text/plain\r\n\r\nok", 66);
 
         close(cfd);
         exit(0);

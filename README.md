@@ -94,6 +94,7 @@ TODO
 ## Potencjalne usprawnienia
 
 - Ograniczenie liczby jednoczesnych połączeń - aktualnie bardzo łatwo jest zDoSować nasz serwer
+- Ograniczenie rozmiaru przesyłanego pliku
 
 ## Autorzy
 
