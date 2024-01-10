@@ -298,38 +298,30 @@ int main(int argc, char **argv)
                 strcat(path, url);
 
                 // Attempt to read file
-                FILE *file = fopen(path, "r");
+                char buffer[1024]; // Buffer to store data
+                FILE *file;
+                file = fopen(path, "r");
 
                 // If file exists, process it and return in response
                 if (file) {
-                    char *line= NULL;
-                    ssize_t read;
-                    size_t len = 0;
-
-                    // Setting size to MAXIMUM_CONTENT_LENGTH leads to segmentation fault
-                    char file_contents[1024];
-                    size_t file_length = 0;
-
-                    while((read = getline(&line, &len, file))!= -1) {
-                        file_length += len;
-                        strcat(file_contents, line);
-                    }
-
+                    int buffer_size = fread(&buffer, sizeof(char), 1024, file);
                     fclose(file);
 
                     // Create response string
-                    size_t base_headers_length = 67;
+                    size_t base_headers_length = 81;
 
-                    char res[base_headers_length + file_length];
+                    char content_length_header[29];
+                    sprintf(content_length_header, "Content-Length: %d\r\n", buffer_size);
+
+                    char res[base_headers_length + buffer_size];
                     strcpy(res, "HTTP/1.1 200 OK\r\n");
-                    strcat(res, "Content-Length: 2\r\n");
-                    // Change to application/octet-stream
-                    strcat(res, "Content-Type: text/plain\r\n\r\n");
-                    strcat(res, file_contents);
+                    strcat(res, content_length_header);
+                    strcat(res, "Content-Type: application/octet-stream\r\n\r\n");
+                    strcat(res, buffer);
 
                     // Send response string
                     printf("Attempting to send a response...\n");
-                    write(cfd, res, base_headers_length + file_length);
+                    write(cfd, res, base_headers_length + buffer_size);
                     printf("Response sent, closing cfd!\n\n");
                     close(cfd);
 
