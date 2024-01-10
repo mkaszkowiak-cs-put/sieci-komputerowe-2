@@ -21,7 +21,6 @@ def create_get_request(path):
     payload += f"Host: {SERVER_ADDRESS[0]}:{SERVER_ADDRESS[1]}\r\n"
     # Required, as HTTP 1.1 by default should support persistent connections
     payload += f"Connection: close\r\n"
-    payload += f"Content-Length: 0\r\n"
 
     payload += "\r\n"
 
@@ -35,7 +34,19 @@ def create_delete_request(path):
     payload += f"Host: {SERVER_ADDRESS[0]}:{SERVER_ADDRESS[1]}\r\n"
     # Required, as HTTP 1.1 by default should support persistent connections
     payload += f"Connection: close\r\n"
-    payload += f"Content-Length: 0\r\n"
+
+    payload += "\r\n"
+
+    return str.encode(payload)
+
+def create_head_request(path):
+    """
+    Constructs a HEAD request payload, encoded as a binary sequence.
+    """
+    payload =  f"HEAD {path} HTTP/1.1\r\n"
+    payload += f"Host: {SERVER_ADDRESS[0]}:{SERVER_ADDRESS[1]}\r\n"
+    # Required, as HTTP 1.1 by default should support persistent connections
+    payload += f"Connection: close\r\n"
 
     payload += "\r\n"
 
@@ -61,6 +72,18 @@ def get_homepage():
     Returns the response for GET /
     """
     payload = create_get_request("/movies")
+    sock = connect()
+    sock.sendall(payload)
+    output = read_socket(sock)
+    sock.close()
+    
+    return output
+
+def head_homepage():
+    """
+    Returns the response for HEAD /
+    """
+    payload = create_head_request("/movies")
     sock = connect()
     sock.sendall(payload)
     output = read_socket(sock)

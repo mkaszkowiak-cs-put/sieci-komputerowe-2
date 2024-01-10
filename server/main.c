@@ -345,6 +345,51 @@ int main(int argc, char **argv)
         else if (strncmp(method, "HEAD", 4) == 0 && strlen(method) == 4)
         {
             printf("HEAD is supported!\n");
+
+            // Temporary condition, so previously implemented tests still work
+            // Below code is being executed for routes besides "/"
+            if (strcmp(url, "/") != 0) {
+                // Concat url parameter to SERVER_RESOURCES_PATH
+                char path[strlen(SERVER_RESOURCES_PATH) + strlen(url)];
+                strcpy(path, SERVER_RESOURCES_PATH);
+                strcat(path, url);
+
+                // Attempt to read file
+                char buffer[1024]; // Buffer to store data
+                FILE *file;
+                file = fopen(path, "r");
+
+                // If file exists, process it and return in response
+                if (file) {
+                    int buffer_size = fread(&buffer, sizeof(char), 1024, file);
+                    fclose(file);
+
+                    // Create response string
+                    size_t base_headers_length = 81;
+
+                    char content_length_header[29];
+                    sprintf(content_length_header, "Content-Length: %d\r\n", buffer_size);
+
+                    char res[base_headers_length];
+                    strcpy(res, "HTTP/1.1 200 OK\r\n");
+                    strcat(res, content_length_header);
+                    strcat(res, "Content-Type: application/octet-stream\r\n\r\n");
+
+                    // Send response string
+                    printf("Attempting to send a response...\n");
+                    write(cfd, res, base_headers_length);
+                    printf("Response sent, closing cfd!\n\n");
+                    close(cfd);
+
+                    exit(0);
+                } else {
+                    // handle not existing file
+                    printf("Invalid request: Resource '%s' was not found, closing the connection.\n", url);
+                    write(cfd, "HTTP/1.1 404 Not found\r\n\r\n", 27);
+                    close(cfd);
+                    exit(0);
+                }
+            }
         }
         else if (strncmp(method, "DELETE", 6) == 0 && strlen(method) == 6)
         {

@@ -36,6 +36,15 @@ def get_homepage():
     return encode_response(parsed_response)
 
 @eel.expose
+def head_homepage():
+    print("Calling HEAD /movies")
+    response = client.head_homepage()
+    print(response)
+
+    parsed_response = http_parser.parse_response(response)
+    return encode_response(parsed_response)
+
+@eel.expose
 def delete_homepage():
     print("Calling DELETE /movies")
     response = client.delete_homepage()
