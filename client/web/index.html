@@ -1,129 +1,134 @@
 <!DOCTYPE html>
 <html lang="pl-PL">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Klient HTTP</title>
 
     <!-- Include eel.js - note this file doesn't exist in the 'web' directory -->
     <script type="text/javascript" src="/eel.js"></script>
     <script type="text/javascript">
-        // Test if Eel connection is successful
-        eel.helloworld();
+      // Test if Eel connection is successful
+      eel.helloworld();
 
-        function response_callback(response) {
-            const responseObject = JSON.parse(response);
+      function response_callback(response) {
+        const responseObject = JSON.parse(response);
 
-            const correctSpan = document.querySelector("#correct");
-            const headersList = document.querySelector("#headers");
-            const bodyPre = document.querySelector("#body");
+        const correctSpan = document.querySelector("#correct");
+        const headersList = document.querySelector("#headers");
+        const codeSpan = document.querySelector("#code");
+        const bodyPre = document.querySelector("#body");
 
-            correctSpan.textContent = responseObject.valid ? "TAK" : "NIE";
-            headersList.innerHTML = '';
-            if (responseObject.headers) {
-                Object.keys(responseObject.headers).forEach(key => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<strong>${key}</strong>: ${responseObject.headers[key]}`;
-                    headersList.appendChild(li);
-                });
-            } else {
-                headersList.innerHTML = '--';
-            }
-
-            bodyPre.textContent = responseObject.body ? responseObject.body : "--";
+        correctSpan.textContent = responseObject.valid ? "TAK" : "NIE";
+        codeSpan.textContent = responseObject.code;
+        headersList.innerHTML = "";
+        if (responseObject.headers) {
+          Object.keys(responseObject.headers).forEach((key) => {
+            const li = document.createElement("li");
+            li.innerHTML = `<strong>${key}</strong>: ${responseObject.headers[key]}`;
+            headersList.appendChild(li);
+          });
+        } else {
+          headersList.innerHTML = "--";
         }
+
+        bodyPre.textContent = responseObject.body ? responseObject.body : "--";
+      }
     </script>
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/typebase.css/0.5.0/typebase.min.css"
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/typebase.css/0.5.0/typebase.min.css"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
 
     <style>
-        body {
-            font-family: Inter;
-            padding: 16px;
-        }
+      body {
+        font-family: Inter;
+        padding: 16px;
+      }
 
+      .row {
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
+      }
+
+      .column {
+        flex: 1 1;
+      }
+
+      pre {
+        background: lightgrey;
+        font-family: monospace;
+      }
+
+      @media screen and (max-width: 800px) {
         .row {
-            display: flex;
-            flex-direction: row;
-            gap: 16px;
+          flex-direction: column;
         }
-
-        .column {
-            flex: 1 1;
-        }
-
-        pre {
-            background: lightgrey;
-            font-family: monospace;
-        }
-
-        @media screen and (max-width: 800px) {
-            .row {
-                flex-direction: column;
-            }
-        }
+      }
     </style>
-</head>
+  </head>
 
-<body>
-    <h2> <img src="/android-chrome-192x192.png" width="50px"> Klient HTTP</h2>
+  <body>
+    <h2><img src="/android-chrome-192x192.png" width="50px" /> Klient HTTP</h2>
     <p>Powered by COBOL</p>
     <main class="row">
-        <section class="column">
-            <h3>Czynności</h3>
-            <ul>
-                <li>
-                    <a href="#" onclick="eel.get_homepage()(response_callback)">
-                        GET /
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        HEAD - TODO
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        PUT - Dodaj plik TODO
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        DELETE - Dodaj plik TODO
-                    </a>
-                </li>
-            </ul>
+      <section class="column">
+        <h3>Czynności</h3>
+        <ul>
+          <li>
+            <a href="#" onclick="eel.get_homepage()(response_callback)">
+              GET /
+            </a>
+          </li>
+          <li>
+            <a href="#"> HEAD - TODO </a>
+          </li>
+          <li>
+            <a href="#"> PUT - Dodaj plik TODO </a>
+          </li>
+          <li>
+            <a href="#" onclick="eel.delete_homepage()(response_callback)">
+              DELETE - Dodaj plik TODO, usuwa movies
+            </a>
+          </li>
+        </ul>
 
-            <br><br>
+        <br /><br />
 
-            <strong>[Input: Wgraj plik TODO]</strong><br>
-            <strong>Aktualnie wgrany plik: TODO</strong><br>
-            <strong>[Input: Nazwa pliku TODO]</strong><br>
+        <strong>[Input: Wgraj plik TODO]</strong><br />
+        <strong>Aktualnie wgrany plik: TODO</strong><br />
+        <strong>[Input: Nazwa pliku TODO]</strong><br />
+      </section>
+      <section class="column">
+        <h3>Odpowiedź serwera</h3>
 
-        </section>
-        <section class="column">
-            <h3>Odpowiedź serwera</h3>
-
-            <p>Żądanie poprawne: <span id="correct">--</span></p>
-            <p>Nagłówki:</p>
-            <ul id="headers">
-                --
-            </ul>
-            <p>Body:</p>
-            <pre id="body">--</pre>
-        </section>
+        <p>Żądanie poprawne: <span id="correct">--</span></p>
+        <p>Status: <span id="code">--</span></p>
+        <p>Nagłówki:</p>
+        <ul id="headers">
+          --
+        </ul>
+        <p>Body:</p>
+        <pre id="body">--</pre>
+      </section>
     </main>
-
-</body>
-
+  </body>
 </html>

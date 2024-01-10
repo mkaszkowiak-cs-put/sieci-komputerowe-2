@@ -9,9 +9,8 @@ class Response:
     content_length: Optional[int]
     body: Optional[str] 
     headers: Optional[dict]
+    code: int
     
-    # TODO: Status code - is it needed?
-
     def __str__(self):
         txt = f"[*] {'Valid' if self.valid else 'Invalid'} response\n"
         txt += f"{len([] if self.headers is None else self.headers)} headers parsed, content length is {self.content_length}\n\n"
@@ -38,14 +37,19 @@ def parse_response(response):
         # Cannot find a delimiter - invalid HTTP request, exiting
         return Response(response, False, None, None, None)
 
+
     body = response[delimiter+delimiter_length:]
     headers_raw = response[:delimiter]
+    code = 0
 
     # Parse raw headers to header -> value pairs
     headers = {}
-    for header in headers_raw.split('\n'):
+    for index, header in enumerate(headers_raw.split('\n')):
         # Ignore trailing \r
         header = header.strip('\r')
+
+        if (index == 0):
+            code = header.split(" ")[1]
 
         header_delimiter = header.find(':')
         if header_delimiter == -1:
@@ -61,10 +65,10 @@ def parse_response(response):
         content_length = int(headers['Content-Length'])
     except:
         # Cannot find or parse a Content-Length header - invalid HTTP request, exiting
-        return Response(response, False, None, body, headers)
+        return Response(response, False, None, body, headers, code)
 
     # We don't check if Content-Length matches, 
     # let's just live in our happy little world without checks
     # and without trimming the remaining content past Content-Length
 
-    return Response(response, True, content_length, body, headers)
+    return Response(response, True, content_length, body, headers, code)

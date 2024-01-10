@@ -13,7 +13,7 @@ def encode_response(response: http_parser.Response):
     # I don't know the appropriate way to do this with Eel,
     # so we'll just encode then decode a JSON object
     return json.dumps({
-        "code": 200, # TODO: parse response code
+        "code": response.code,
         "raw": response.raw,
         "headers": response.headers,
         "content_length": response.content_length,
@@ -30,6 +30,15 @@ def helloworld():
 def get_homepage():
     print("Calling GET /")
     response = client.get_homepage()
+    print(response)
+
+    parsed_response = http_parser.parse_response(response)
+    return encode_response(parsed_response)
+
+@eel.expose
+def delete_homepage():
+    print("Calling DELETE /movies")
+    response = client.delete_homepage()
     print(response)
 
     parsed_response = http_parser.parse_response(response)
