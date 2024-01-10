@@ -373,7 +373,7 @@ int main(int argc, char **argv)
                 }
 
                 printf("Invalid request: Resource '%s' could not be deleted, closing the connection.\n", path);
-                write(cfd, "HTTP/1.1 501 Internal server error\r\n\r\n", 27);
+                write(cfd, "HTTP/1.1 501 Internal server error\r\n\r\n", 38);
                 close(cfd);
                 exit(0);
             } else {
