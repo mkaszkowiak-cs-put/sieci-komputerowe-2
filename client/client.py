@@ -67,23 +67,23 @@ def read_socket(sock):
     
     return data.decode()
 
-def get_homepage():
+def get_homepage(path):
     """
     Returns the response for GET /
     """
-    payload = create_get_request("/movies")
+    payload = create_get_request(f"/{path}")
     sock = connect()
     sock.sendall(payload)
     output = read_socket(sock)
     sock.close()
-    
+
     return output
 
-def head_homepage():
+def head_homepage(path):
     """
     Returns the response for HEAD /
     """
-    payload = create_head_request("/movies")
+    payload = create_head_request(f"/{path}")
     sock = connect()
     sock.sendall(payload)
     output = read_socket(sock)
@@ -91,11 +91,11 @@ def head_homepage():
     
     return output
 
-def delete_homepage():
+def delete_homepage(path):
     """
     Returns the response for DELETE /movies
     """
-    payload = create_delete_request("/movies")
+    payload = create_delete_request(f"/{path}")
     sock = connect()
     sock.sendall(payload)
     output = read_socket(sock)

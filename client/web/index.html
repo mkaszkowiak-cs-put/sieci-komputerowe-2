@@ -11,6 +11,10 @@
       // Test if Eel connection is successful
       eel.helloworld();
 
+      const getMethodPath = () => {
+        return document.querySelector("#methodPath").value;
+      };
+
       function response_callback(response) {
         const responseObject = JSON.parse(response);
 
@@ -91,24 +95,36 @@
     <p>Powered by COBOL</p>
     <main class="row">
       <section class="column">
+        <h3>Ścieżka</h3>
+        <input id="methodPath" />
+
         <h3>Czynności</h3>
         <ul>
           <li>
-            <a href="#" onclick="eel.get_homepage()(response_callback)">
-              GET /
+            <a
+              href="#"
+              onclick="eel.get_homepage(getMethodPath())(response_callback)"
+            >
+              GET
             </a>
           </li>
           <li>
-            <a href="#" onclick="eel.head_homepage()(response_callback)">
-              HEAD - TODO, head movies
+            <a
+              href="#"
+              onclick="eel.head_homepage(getMethodPath())(response_callback)"
+            >
+              HEAD
             </a>
           </li>
           <li>
             <a href="#"> PUT - Dodaj plik TODO </a>
           </li>
           <li>
-            <a href="#" onclick="eel.delete_homepage()(response_callback)">
-              DELETE - Dodaj plik TODO, usuwa movies
+            <a
+              href="#"
+              onclick="eel.delete_homepage(getMethodPath())(response_callback)"
+            >
+              DELETE
             </a>
           </li>
         </ul>

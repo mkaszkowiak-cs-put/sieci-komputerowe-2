@@ -27,27 +27,27 @@ def helloworld():
     print("Hello World!")
     
 @eel.expose
-def get_homepage():
+def get_homepage(args):
     print("Calling GET /")
-    response = client.get_homepage()
+    response = client.get_homepage(args)
     print(response)
 
     parsed_response = http_parser.parse_response(response)
     return encode_response(parsed_response)
 
 @eel.expose
-def head_homepage():
+def head_homepage(args):
     print("Calling HEAD /movies")
-    response = client.head_homepage()
+    response = client.head_homepage(args)
     print(response)
 
     parsed_response = http_parser.parse_response(response)
     return encode_response(parsed_response)
 
 @eel.expose
-def delete_homepage():
+def delete_homepage(args):
     print("Calling DELETE /movies")
-    response = client.delete_homepage()
+    response = client.delete_homepage(args)
     print(response)
 
     parsed_response = http_parser.parse_response(response)
