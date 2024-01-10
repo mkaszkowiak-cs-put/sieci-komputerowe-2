@@ -21,6 +21,8 @@ def create_get_request(path):
     payload += f"Host: {SERVER_ADDRESS[0]}:{SERVER_ADDRESS[1]}\r\n"
     # Required, as HTTP 1.1 by default should support persistent connections
     payload += f"Connection: close\r\n"
+    payload += f"Content-Length: 0\r\n"
+
     payload += "\r\n"
 
     return str.encode(payload)

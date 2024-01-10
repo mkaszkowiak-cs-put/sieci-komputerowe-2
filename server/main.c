@@ -181,6 +181,7 @@ int main(int argc, char **argv)
         char *method = strtok(header_buf2, " ");
         char *url = strtok(NULL, " ");
         char *version = strtok(NULL, " ");
+        int content_length = -1;
 
         if (method == NULL || url == NULL || version == NULL)
         {
@@ -188,6 +189,7 @@ int main(int argc, char **argv)
             close(cfd);
             exit(0);
         }
+
         printf("%s %s %s\n", method, url, version);
 
         // Client can not adhere to RFC specs, and send LF instead of CRLF
@@ -253,11 +255,30 @@ int main(int argc, char **argv)
                 continue;
             }
 
+            if (strcmp(key, "Content-Length") == 0) {
+                content_length = atoi(value);
+            }
+
+
             printf("[Header] %s: %s\n", key, value);
         }
         printf("Headers parsed.\n");
 
-        // TODO: check content length header
+        // Check if content-length was provided
+        if (content_length < 0) {
+            printf("Invalid request: Content-Length required, closing the connection.\n");
+            write(cfd, "HTTP/1.1 411 Length Required\r\n\r\n", 32);
+            close(cfd);
+            exit(0);
+        }
+
+        // Check if content-length is lower than MAXIMUM_CONTENT_LENGTH
+        if (content_length > MAXIMUM_CONTENT_LENGTH) {
+            printf("Invalid request: Content-Length exceeds MAXIMUM-CONTENT-LENGTH '%d', closing the connection.\n", content_length);
+            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
+            close(cfd);
+            exit(0);
+        }
 
         // Check if our method is supported
         // We use strncmp and strlen for memory safe comparison
@@ -301,6 +322,14 @@ int main(int argc, char **argv)
         int existing_body_start_pos = header_delimiter_found + header_delimiter_size;
         // Check how many bytes we can still read from buf
         int existing_body_size = buffer_at - existing_body_start_pos;
+
+        // Check if body_size matches content-length header
+        if (existing_body_size != content_length) {
+            printf("Invalid request: Body size is different than Content-Length header '%d', closing the connection.\n", existing_body_size);
+            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
+            close(cfd);
+            exit(0);
+        }
 
         if (existing_body_size > 0)
         {
