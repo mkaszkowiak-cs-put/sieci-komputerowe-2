@@ -340,6 +340,7 @@ int main(int argc, char **argv)
         else if (strncmp(method, "PUT", 3) == 0 && strlen(method) == 3)
         {
             printf("PUT is supported!\n");
+
         }
         else if (strncmp(method, "HEAD", 4) == 0 && strlen(method) == 4)
         {
@@ -348,6 +349,39 @@ int main(int argc, char **argv)
         else if (strncmp(method, "DELETE", 6) == 0 && strlen(method) == 6)
         {
             printf("DELETE is supported!\n");
+
+            // Get file to delete path
+            char path[strlen(SERVER_RESOURCES_PATH) + strlen(url)];
+            strcpy(path, SERVER_RESOURCES_PATH);
+            strcat(path, url);
+
+            // Read file to see whether it exists
+            FILE *file;
+            int file_exists = 0;
+
+            if ((file = fopen(path, "r"))) {
+                printf("\n\n File exists! \n\n");
+                file_exists = 1;
+            }
+
+            if (file_exists) {
+                if (remove(path) == 0) {
+                    printf("Resource '%s' has been successfully deleted, closing the connection.\n", path);
+                    write(cfd, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: text/plain\r\n\r\nok", 66);
+                    close(cfd);
+                    exit(0);
+                }
+
+                printf("Invalid request: Resource '%s' could not be deleted, closing the connection.\n", path);
+                write(cfd, "HTTP/1.1 501 Internal server error\r\n\r\n", 27);
+                close(cfd);
+                exit(0);
+            } else {
+                printf("Invalid request: Resource '%s' was not found, closing the connection.\n", url);
+                write(cfd, "HTTP/1.1 404 Not found\r\n\r\n", 27);
+                close(cfd);
+                exit(0);
+            }
         }
         else
         {

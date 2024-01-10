@@ -27,6 +27,19 @@ def create_get_request(path):
 
     return str.encode(payload)
 
+def create_delete_request(path):
+    """
+    Constructs a DELETE request payload, encoded as a binary sequence.
+    """
+    payload =  f"DELETE {path} HTTP/1.1\r\n"
+    payload += f"Host: {SERVER_ADDRESS[0]}:{SERVER_ADDRESS[1]}\r\n"
+    # Required, as HTTP 1.1 by default should support persistent connections
+    payload += f"Connection: close\r\n"
+    payload += f"Content-Length: 0\r\n"
+
+    payload += "\r\n"
+
+    return str.encode(payload)
 
 def read_socket(sock):
     """
@@ -48,6 +61,18 @@ def get_homepage():
     Returns the response for GET /
     """
     payload = create_get_request("/movies")
+    sock = connect()
+    sock.sendall(payload)
+    output = read_socket(sock)
+    sock.close()
+    
+    return output
+
+def delete_homepage():
+    """
+    Returns the response for DELETE /movies
+    """
+    payload = create_delete_request("/movies")
     sock = connect()
     sock.sendall(payload)
     output = read_socket(sock)
