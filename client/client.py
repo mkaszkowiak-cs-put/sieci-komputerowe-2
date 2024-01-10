@@ -47,7 +47,7 @@ def get_homepage():
     """
     Returns the response for GET /
     """
-    payload = create_get_request("/")
+    payload = create_get_request("/movies")
     sock = connect()
     sock.sendall(payload)
     output = read_socket(sock)

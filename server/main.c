@@ -30,6 +30,9 @@
 #define MAX_QUEUED_CONNECTIONS 10
 #define SOCKET_TIMEOUT_S 1
 
+// Server resource files path
+#define SERVER_RESOURCES_PATH "resources"
+
 int main(int argc, char **argv)
 {
     // As our server runs on fork(), let's ignore SIGCHLD to prevent zombie processes
@@ -285,6 +288,61 @@ int main(int argc, char **argv)
         if (strncmp(method, "GET", 3) == 0 && strlen(method) == 3)
         {
             printf("GET is supported!\n");
+
+            // Temporary condition, so previously implemented tests still work
+            // Below code is being executed for routes besides "/"
+            if (strcmp(url, "/") != 0) {
+                // Concat url parameter to SERVER_RESOURCES_PATH
+                char path[strlen(SERVER_RESOURCES_PATH) + strlen(url)];
+                strcpy(path, SERVER_RESOURCES_PATH);
+                strcat(path, url);
+
+                // Attempt to read file
+                FILE *file = fopen(path, "r");
+
+                // If file exists, process it and return in response
+                if (file) {
+                    printf("xd");
+                    char *line= NULL;
+                    ssize_t read;
+                    size_t len = 0;
+
+                    // Setting size to MAXIMUM_CONTENT_LENGTH leads to segmentation fault
+                    char file_contents[1024];
+                    size_t file_length = 0;
+
+                    while((read = getline(&line, &len, file))!= -1) {
+                        file_length += len;
+                        strcat(file_contents, line);
+                    }
+
+                    fclose(file);
+
+                    // Create response string
+                    size_t base_headers_length = 67;
+
+                    char res[base_headers_length + file_length];
+                    strcpy(res, "HTTP/1.1 200 OK\r\n");
+                    strcat(res, "Content-Length: 2\r\n");
+                    // Change to application/octet-stream
+                    strcat(res, "Content-Type: text/plain\r\n\r\n");
+                    strcat(res, file_contents);
+
+                    // Send response string
+                    printf("Attempting to send a response...\n");
+                    write(cfd, res, base_headers_length + file_length);
+                    printf("Response sent, closing cfd!\n\n");
+                    close(cfd);
+
+                    exit(0);
+                } else {
+                    // handle not existing file
+                    printf("Invalid request: Resource '%s' was not found, closing the connection.\n", url);
+                    write(cfd, "HTTP/1.1 404 Not found\r\n\r\n", 27);
+                    close(cfd);
+                    exit(0);
+                }
+            }
         }
         else if (strncmp(method, "PUT", 3) == 0 && strlen(method) == 3)
         {
