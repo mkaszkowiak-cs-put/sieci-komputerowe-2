@@ -267,20 +267,22 @@ int main(int argc, char **argv)
         }
         printf("Headers parsed.\n");
 
-        // Check if content-length was provided
-        if (content_length < 0) {
-            printf("Invalid request: Content-Length required, closing the connection.\n");
-            write(cfd, "HTTP/1.1 411 Length Required\r\n\r\n", 32);
-            close(cfd);
-            exit(0);
-        }
+        if (strncmp(method, "PUT", 3) == 0 && strlen(method) == 3) {
+            // Check if content-length was provided
+            if (content_length < 0) {
+                printf("Invalid request: Content-Length required, closing the connection.\n");
+                write(cfd, "HTTP/1.1 411 Length Required\r\n\r\n", 32);
+                close(cfd);
+                exit(0);
+            }
 
-        // Check if content-length is lower than MAXIMUM_CONTENT_LENGTH
-        if (content_length > MAXIMUM_CONTENT_LENGTH) {
-            printf("Invalid request: Content-Length exceeds MAXIMUM-CONTENT-LENGTH '%d', closing the connection.\n", content_length);
-            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
-            close(cfd);
-            exit(0);
+            // Check if content-length is lower than MAXIMUM_CONTENT_LENGTH
+            if (content_length > MAXIMUM_CONTENT_LENGTH) {
+                printf("Invalid request: Content-Length exceeds MAXIMUM-CONTENT-LENGTH '%d', closing the connection.\n", content_length);
+                write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
+                close(cfd);
+                exit(0);
+            }
         }
 
         // Check if our method is supported
