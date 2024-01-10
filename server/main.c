@@ -302,7 +302,6 @@ int main(int argc, char **argv)
 
                 // If file exists, process it and return in response
                 if (file) {
-                    printf("xd");
                     char *line= NULL;
                     ssize_t read;
                     size_t len = 0;
