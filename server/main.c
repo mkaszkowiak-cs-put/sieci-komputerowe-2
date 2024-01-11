@@ -195,6 +195,20 @@ int main(int argc, char **argv)
 
         printf("%s %s %s\n", method, url, version);
 
+        // Our server deals with files on all 4 methods - GET, HEAD, PUT and DELETE
+        // For each method the path determines a path to a file
+        // I want to prevent directory traversal, and the simplest way to do that is detecting .. in URL
+        // Otherwise it's possible (I just tried) to do GET /../../../../../../../../etc/passwd
+        // This will of course block some files with double commas in filename,
+        // but handling edge cases for proper security is another task of its own
+        if (strstr(url, "..") != NULL)
+        {
+            printf("Invalid request: Path traversal attempt detected, .. found in URL.\n");
+            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
+            close(cfd);
+            exit(0);
+        }
+
         // Client can not adhere to RFC specs, and send LF instead of CRLF
         // But according to RFC we should handle this case
         // I'll do it this way instead of splitting by \n, to avoid trailing \r
