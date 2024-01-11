@@ -11,9 +11,12 @@
 #include <signal.h>
 #include <sys/time.h>
 
-// Not defined in C
-// TODO: remove if we move to c++ and use std::min instead
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+#define ERROR_CFD(txt, len) \
+    write(cfd, txt, len);   \
+    close(cfd);             \
+    exit(0);
 
 // Typical HTTP servers' header length limit is 4KiB - 8KiB
 // We're limiting ours to a single buffer, up to 4096 bytes (4 KiB)
@@ -151,10 +154,7 @@ int main(int argc, char **argv)
         if (header_delimiter_found == -1)
         {
             printf("Invalid request: limiter was not found in the first %d bytes, closing the connection.\n", BUFFER_SIZE);
-            printf("Raw request data:\n>>>>>\n%s\n<<<<<\n", buf);
-            write(cfd, "HTTP/1.1 431 Request Header Fields Too Large\r\n\r\n", 48);
-            close(cfd);
-            exit(0);
+            ERROR_CFD("HTTP/1.1 431 Request Header Fields Too Large\r\n\r\n", 48);
         }
 
         printf("Header delimiter was found at pos %d of size %d\n", header_delimiter_found, header_delimiter_size);
@@ -165,9 +165,7 @@ int main(int argc, char **argv)
         if (header_size < 0)
         {
             printf("Invalid request: empty header section, closing the connection.\n");
-            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
-            close(cfd);
-            exit(0);
+            ERROR_CFD("HTTP/1.1 400 Bad Request\r\n\r\n", 28);
         }
 
         strncpy(header_buf, buf, header_size);
@@ -185,9 +183,7 @@ int main(int argc, char **argv)
         if (method == NULL || url == NULL || version == NULL)
         {
             printf("Invalid request: not found method OR url OR version, closing the connection.\n");
-            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
-            close(cfd);
-            exit(0);
+            ERROR_CFD("HTTP/1.1 400 Bad Request\r\n\r\n", 28);
         }
 
         printf("%s %s %s\n", method, url, version);
@@ -202,9 +198,7 @@ int main(int argc, char **argv)
         if (!(IS_GET || IS_PUT || IS_HEAD || IS_DELETE))
         {
             printf("Invalid request: unsupported HTTP method '%s', closing the connection.\n", method);
-            write(cfd, "HTTP/1.1 405 Method Not Allowed\r\n\r\n", 35);
-            close(cfd);
-            exit(0);
+            ERROR_CFD("HTTP/1.1 405 Method Not Allowed\r\n\r\n", 35);
         }
 
         // Our server deals with files on all 4 methods - GET, HEAD, PUT and DELETE
@@ -216,35 +210,23 @@ int main(int argc, char **argv)
         if (strstr(url, "..") != NULL)
         {
             printf("Invalid request: Path traversal attempt detected, .. found in URL.\n");
-            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
-            close(cfd);
-            exit(0);
+            ERROR_CFD("HTTP/1.1 400 Bad Request\r\n\r\n", 28);
         }
 
         // Client can not adhere to RFC specs, and send LF instead of CRLF
         // But according to RFC we should handle this case
         // I'll do it this way instead of splitting by \n, to avoid trailing \r
-        char *saveptr = NULL;
-        char *header = NULL;
+        char *saveptr = NULL, *header = NULL;
         char header_buf3[BUFFER_SIZE];
         memcpy(header_buf3, header_buf, BUFFER_SIZE);
-        if (header_delimiter_size == 4)
-        {
-            // Ignore first line, as it's GET / HTTP1.1
-            // Splitting with strtok_r instead of strtok allows us to nest strtoks
-            header = strtok_r(header_buf3, "\r\n", &saveptr);
-            header = strtok_r(NULL, "\r\n", &saveptr);
-        }
-        else
-        {
-            header = strtok_r(header_buf3, "\n", &saveptr);
-            header = strtok_r(NULL, "\n", &saveptr);
-        }
+
+        // Ignore first line, as it's GET / HTTP1.1
+        strtok_r(header_buf3, (header_delimiter_size == 4) ? "\r\n" : "\n", &saveptr);
+        header = strtok_r(NULL, (header_delimiter_size == 4) ? "\r\n" : "\n", &saveptr);
 
         printf("\n\nParsing headers...\n");
 
-        int content_length = -1;
-        int host_header_found = 0;
+        int content_length = -1, host_header_found = 0;
         while (1)
         {
             if (header == NULL)
@@ -260,21 +242,12 @@ int main(int argc, char **argv)
             // Header now should hold a key:value pair
             // For the sake of simplicity, we're going to assume that there is a single trailing space
             // Though the RFC spec says that there may be 0 or multiple trailing spaces
-
+            // BUG: Parser currently seems to only read up to first ' ', due to strtok's behaviour
+            // https://stackoverflow.com/questions/60803240/so-strtok-is-destructive
             char *key = strtok(header, ": ");
             char *value = strtok(NULL, ": ");
-            // BUG: Parser currently only reads up to first ' ', due to strtok's behaviour
-            // https://stackoverflow.com/questions/60803240/so-strtok-is-destructive
 
-            if (header_delimiter_size == 4)
-            {
-
-                header = strtok_r(NULL, "\r\n", &saveptr);
-            }
-            else
-            {
-                header = strtok_r(NULL, "\n", &saveptr);
-            }
+            header = strtok_r(NULL, (header_delimiter_size == 4) ? "\r\n" : "\n", &saveptr);
 
             if (key == NULL || value == NULL)
             {
@@ -282,27 +255,17 @@ int main(int argc, char **argv)
                 continue;
             }
 
-            if (strcmp(key, "Content-Length") == 0)
-            {
-                content_length = atoi(value);
-            }
-
-            if (strcmp(key, "Host") == 0)
-            {
-                host_header_found = 1;
-            }
+            content_length = (strcmp(key, "Content-Length") == 0) ? atoi(value) : content_length;
+            host_header_found = host_header_found || (strcmp(key, "Host") == 0);
 
             printf("[Header] %s: %s\n", key, value);
         }
-        printf("Headers parsed.\n");
 
         // Validate whether Host: header exists - RFC 2616 makes this header mandatory
         if (!host_header_found)
         {
             printf("Invalid request: Host header missing.\n");
-            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
-            close(cfd);
-            exit(0);
+            ERROR_CFD("HTTP/1.1 400 Bad Request\r\n\r\n", 28);
         }
 
         // Validate Content-Length prior to reading body,
@@ -314,18 +277,14 @@ int main(int argc, char **argv)
             if (content_length < 0)
             {
                 printf("Invalid request: Content-Length required, closing the connection.\n");
-                write(cfd, "HTTP/1.1 411 Length Required\r\n\r\n", 32);
-                close(cfd);
-                exit(0);
+                ERROR_CFD("HTTP/1.1 411 Length Required\r\n\r\n", 32);
             }
 
             // Check if content-length is lower than MAXIMUM_CONTENT_LENGTH
             if (content_length > MAXIMUM_CONTENT_LENGTH)
             {
                 printf("Invalid request: Content-Length exceeds MAXIMUM-CONTENT-LENGTH '%d', closing the connection.\n", content_length);
-                write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
-                close(cfd);
-                exit(0);
+                ERROR_CFD("HTTP/1.1 400 Bad Request\r\n\r\n", 28);
             }
         }
 
@@ -386,9 +345,7 @@ int main(int argc, char **argv)
             {
                 printf("Invalid request: Body size '%zu' is different than Content-Length header '%d', closing the connection.\n",
                        body_buf_size, content_length);
-                write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
-                close(cfd);
-                exit(0);
+                ERROR_CFD("HTTP/1.1 400 Bad Request\r\n\r\n", 28);
             }
 
             fwrite(buf, read_n, 1, body_stream);
@@ -397,39 +354,28 @@ int main(int argc, char **argv)
         // Free resources - fclose also flushes the stream
         fclose(body_stream);
 
-        /*
-        RFC 2616: HTTP/1.1 user agents MUST notify the user when an invalid length is received and detected.
-        We'll send a 400 Bad Request to ensure the client is extra-compliant :-)
-        */
+        // RFC 2616: HTTP/1.1 user agents MUST notify the user when an invalid length is received and detected.
+        // We'll send a 400 Bad Request to ensure the client is extra-compliant :-)
         if (body_buf_size != content_length && content_length != -1)
         {
             printf("Invalid request: Body size '%zu' is different than Content-Length header '%d', closing the connection.\n",
                    body_buf_size, content_length);
-            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
-            close(cfd);
-            exit(0);
+            ERROR_CFD("HTTP/1.1 400 Bad Request\r\n\r\n", 28);
         }
 
-        // Concat url parameter to SERVER_RESOURCES_PATH
+        // Concat url parameter to SERVER_RESOURCES_PATH, in order to determine file path
         char path[strlen(SERVER_RESOURCES_PATH) + strlen(url)];
         strcpy(path, SERVER_RESOURCES_PATH);
         strcat(path, url);
 
-        // Attempt to open file
-        char buffer[1024]; // Buffer to store data
-        // r+ prevents opening a directory
+        // Open file to determine if it exists. r+ prevents opening a directory
         FILE *file = fopen(path, "r+");
 
         // GET, HEAD, and DELETE methods require our file to exist
-        if (IS_GET || IS_HEAD || IS_DELETE)
+        if ((IS_GET || IS_HEAD || IS_DELETE) && !file)
         {
-            if (!file)
-            {
-                printf("Invalid request: Resource '%s' was not found, closing the connection.\n", url);
-                write(cfd, "HTTP/1.1 404 Not found\r\n\r\n", 27);
-                close(cfd);
-                exit(0);
-            }
+            printf("Invalid request: Resource '%s' was not found, closing the connection.\n", url);
+            ERROR_CFD("HTTP/1.1 404 Not Found\r\n\r\n", 27);
         }
 
         // GET and HEAD send the same headers
@@ -457,6 +403,9 @@ int main(int argc, char **argv)
             // Send headers
             write(cfd, response_headers, strlen(response_headers));
         }
+
+        // Buffer to store file data
+        char buffer[1024];
 
         if (IS_GET)
         {
