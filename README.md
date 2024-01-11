@@ -65,12 +65,25 @@ eel.browsers.set_path('chrome', '/path/to/your/exe')
 
 TODO (chyba jednak nie opis samego HTTP)
 
+Tu myślę trzeba napisać, że np:
+- GET /<sciezka do pliku> 
+    - zwraca to i to 
+
+- PUT /<sciezka do pliku>
+    - body to i to
+    - efekt taki i taki 
+
+itd itd
+
+oraz moze troszke ze spelnia http rfc 2616? ze wymagany naglowek host, ze content-length poprawny na put, itd itp
+
 
 ## Istotne funkcjonalności
 - Zabezpieczenie przed atakiem directory traversal (GET ../../../../../../etc/passwd)
 - Konfigurowalny maksymalny limit body
 - Konfigurowalny maksymalny limit nagłówków (z poprawną odpowiedzią HTTP 431)
-- Zabezpieczenie przed przepełnieniem RAM poprzez uniemożliwienie przesłania gigantycznego payloadu
+- Zabezpieczenie przed przepełnieniem RAM - uniemożliwienie przesłania za dużego payloadu
+- Konfigurowalny timeout, zabezpieczający przed zawieszeniem połączeń
 - Obsługa nagłówka 100 Continue
 - Przetwarzanie nagłówków z delimeterem zarówno CRLF jak i LF, zgodnie z pkt 10.3 RFC 2616
 - Wymuszanie nagłówka Host:, zgodnie z pkt 19.6.1.1 RFC 2616

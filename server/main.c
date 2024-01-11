@@ -419,7 +419,7 @@ int main(int argc, char **argv)
         }
         else if (IS_DELETE)
         {
-            printf("DELETE is supported!\n");
+            printf("Attempting to DELETE file\n");
             fclose(file);
 
             if (remove(path) != 0)
@@ -435,7 +435,25 @@ int main(int argc, char **argv)
         }
         else if (IS_PUT)
         {
-            printf("PUT is supported! \n");
+            printf("Attempting to PUT file contents to %s\n", path);
+            if (file != NULL)
+            {
+                fclose(file);
+            }
+
+            if (!(file = fopen(path, "w+")))
+            { // Truncates the file if it exists
+                printf("Unable to open file for writing!\n");
+                ERROR_CFD("HTTP/1.1 403 Forbidden\r\n\r\n", 26);
+            }
+
+            printf("File opened in w+ mode\n");
+
+            // TODO: theoretically it doesn't have to write exactly body_buf_size,
+            // but during lessons it always seemt to do so, even over sockets, so currently omiting this
+            size_t saved = fwrite(body_buf, 1, body_buf_size, file);
+            printf("Fwrite called on %s with %ld saved out of %ld", path, saved, body_buf_size);
+            write(cfd, "HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n", 43);
         }
 
         // DELETE closes file descriptor earlier on
