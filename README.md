@@ -68,12 +68,12 @@ TODO (chyba jednak nie opis samego HTTP)
 
 ## Istotne funkcjonalności
 - Zabezpieczenie przed atakiem directory traversal (GET ../../../../../../etc/passwd)
-- Konfigurowalny maksymalny limit pliku
+- Konfigurowalny maksymalny limit body
+- Konfigurowalny maksymalny limit nagłówków (z poprawną odpowiedzią HTTP 431)
 - Zabezpieczenie przed przepełnieniem RAM poprzez uniemożliwienie przesłania gigantycznego payloadu
 - Obsługa nagłówka 100 Continue
 - Przetwarzanie nagłówków z delimeterem zarówno CRLF jak i LF, zgodnie z pkt 10.3 RFC 2616
 - TODO: Wymuszanie nagłówka Host:, zgodnie z pkt 19.6.1.1 RFC 2616
-
 ---
 
 

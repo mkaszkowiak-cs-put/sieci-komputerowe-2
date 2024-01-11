@@ -157,6 +157,7 @@ int main(int argc, char **argv)
         {
             printf("Invalid request: limiter was not found in the first %d bytes, closing the connection.\n", BUFFER_SIZE);
             printf("Raw request data:\n>>>>>\n%s\n<<<<<\n", buf);
+            write(cfd, "HTTP/1.1 431 Request Header Fields Too Large\r\n\r\n", 48);
             close(cfd);
             exit(0);
         }
@@ -169,6 +170,7 @@ int main(int argc, char **argv)
         if (header_size < 0)
         {
             printf("Invalid request: empty header section, closing the connection.\n");
+            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
             close(cfd);
             exit(0);
         }
@@ -189,6 +191,7 @@ int main(int argc, char **argv)
         if (method == NULL || url == NULL || version == NULL)
         {
             printf("Invalid request: not found method OR url OR version, closing the connection.\n");
+            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
             close(cfd);
             exit(0);
         }
@@ -287,9 +290,9 @@ int main(int argc, char **argv)
             the server SHOULD respond with 400 (bad request) if it cannot
             determine the length of the message, or with 411 (length required) if
             it wishes to insist on receiving a valid Content-Length.
-            */
 
-            // Check if content-length was provided
+            Let's enforce it only on PUT requests
+            */
             if (content_length < 0)
             {
                 printf("Invalid request: Content-Length required, closing the connection.\n");
@@ -306,120 +309,6 @@ int main(int argc, char **argv)
                 close(cfd);
                 exit(0);
             }
-        }
-
-        int IS_GET = strncmp(method, "GET", 3) == 0 && strlen(method) == 3;
-        int IS_PUT = strncmp(method, "PUT", 3) == 0 && strlen(method) == 3;
-        int IS_HEAD = strncmp(method, "HEAD", 4) == 0 && strlen(method) == 4;
-        int IS_DELETE = strncmp(method, "DELETE", 6) == 0 && strlen(method) == 6;
-
-        if (!(IS_GET || IS_PUT || IS_HEAD || IS_DELETE))
-        {
-            printf("Invalid request: unsupported HTTP method '%s', closing the connection.\n", method);
-            write(cfd, "HTTP/1.1 405 Method Not Allowed\r\n\r\n", 35);
-            close(cfd);
-            exit(0);
-        }
-
-        // Concat url parameter to SERVER_RESOURCES_PATH
-        char path[strlen(SERVER_RESOURCES_PATH) + strlen(url)];
-        strcpy(path, SERVER_RESOURCES_PATH);
-        strcat(path, url);
-
-        // Attempt to open file
-        char buffer[1024]; // Buffer to store data
-        FILE *file = fopen(path, "r");
-
-        // GET, HEAD, and DELETE methods require our file to exist
-        if (IS_GET || IS_HEAD || IS_DELETE)
-        {
-            if (!file)
-            {
-                printf("Invalid request: Resource '%s' was not found, closing the connection.\n", url);
-                write(cfd, "HTTP/1.1 404 Not found\r\n\r\n", 27);
-                close(cfd);
-                exit(0);
-            }
-        }
-
-        // Check if our method is supported
-        // We use strncmp and strlen for memory safe comparison
-        if (IS_GET)
-        {
-            printf("GET is supported!\n");
-
-            // If file exists, process it and return in response
-            int buffer_size = fread(&buffer, sizeof(char), 1024, file);
-            fclose(file);
-
-            // Create response string
-            size_t base_headers_length = 81;
-
-            char content_length_header[29];
-            sprintf(content_length_header, "Content-Length: %d\r\n", buffer_size);
-
-            char res[base_headers_length + buffer_size];
-            strcpy(res, "HTTP/1.1 200 OK\r\n");
-            strcat(res, content_length_header);
-            strcat(res, "Content-Type: application/octet-stream\r\n\r\n");
-            strcat(res, buffer);
-
-            // Send response string
-            printf("Attempting to send a response...\n");
-            write(cfd, res, base_headers_length + buffer_size);
-            printf("Response sent, closing cfd!\n\n");
-            close(cfd);
-
-            exit(0);
-        }
-        else if (IS_PUT)
-        {
-            printf("PUT is supported!\n");
-        }
-        else if (IS_HEAD)
-        {
-            printf("HEAD is supported!\n");
-
-            // If file exists, process it and return in response
-            int buffer_size = fread(&buffer, sizeof(char), 1024, file);
-            fclose(file);
-
-            // Create response string
-            size_t base_headers_length = 81;
-
-            char content_length_header[29];
-            sprintf(content_length_header, "Content-Length: %d\r\n", buffer_size);
-
-            char res[base_headers_length];
-            strcpy(res, "HTTP/1.1 200 OK\r\n");
-            strcat(res, content_length_header);
-            strcat(res, "Content-Type: application/octet-stream\r\n\r\n");
-
-            // Send response string
-            printf("Attempting to send a response...\n");
-            write(cfd, res, base_headers_length);
-            printf("Response sent, closing cfd!\n\n");
-            close(cfd);
-
-            exit(0);
-        }
-        else if (IS_DELETE)
-        {
-            printf("DELETE is supported!\n");
-            fclose(file);
-
-            if (remove(path) == 0)
-            {
-                printf("Resource '%s' has been successfully deleted, closing the connection.\n", path);
-                write(cfd, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: text/plain\r\n\r\nok", 66);
-                close(cfd);
-                exit(0);
-            }
-
-            printf("Invalid request: Resource '%s' could not be deleted, closing the connection.\n", path);
-            write(cfd, "HTTP/1.1 500 Internal Server Error\r\n\r\n", 38);
-            close(cfd);
-            exit(0);
         }
 
         // Let's use a dynamic buffer for storing the body content.
@@ -475,7 +364,7 @@ int main(int argc, char **argv)
 
             // Content-Length is already guaranteed to be less than MAXIMUM_CONTENT_LENGTH,
             // So let's just check if the client doesn't send more data than Content-Length
-            if (body_buf_size > content_length)
+            if (body_buf_size > content_length && content_length != -1)
             {
                 printf("Invalid request: Body size '%zu' is different than Content-Length header '%d', closing the connection.\n",
                        body_buf_size, content_length);
@@ -499,7 +388,7 @@ int main(int argc, char **argv)
 
         We'll send a 400 Bad Request to ensure the client is extra-compliant :-)
         */
-        if (body_buf_size != content_length)
+        if (body_buf_size != content_length && content_length != -1)
         {
             printf("Invalid request: Body size '%zu' is different than Content-Length header '%d', closing the connection.\n",
                    body_buf_size, content_length);
@@ -517,19 +406,120 @@ int main(int argc, char **argv)
             printf("\nEmpty body.\n");
         }
 
-        // TODO: read body limited to Content-Length
-        // TODO: appropriate function calls
-        // TODO: generate response
+        int IS_GET = strncmp(method, "GET", 3) == 0 && strlen(method) == 3;
+        int IS_PUT = strncmp(method, "PUT", 3) == 0 && strlen(method) == 3;
+        int IS_HEAD = strncmp(method, "HEAD", 4) == 0 && strlen(method) == 4;
+        int IS_DELETE = strncmp(method, "DELETE", 6) == 0 && strlen(method) == 6;
 
-        // For now, we'll just ignore the body
+        if (!(IS_GET || IS_PUT || IS_HEAD || IS_DELETE))
+        {
+            printf("Invalid request: unsupported HTTP method '%s', closing the connection.\n", method);
+            write(cfd, "HTTP/1.1 405 Method Not Allowed\r\n\r\n", 35);
+            close(cfd);
+            exit(0);
+        }
 
-        printf("Attempting to send a response...\n");
-        // Temporary 200 OK as an universal response
-        write(cfd, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: text/plain\r\n\r\nok", 66);
+        // Concat url parameter to SERVER_RESOURCES_PATH
+        char path[strlen(SERVER_RESOURCES_PATH) + strlen(url)];
+        strcpy(path, SERVER_RESOURCES_PATH);
+        strcat(path, url);
 
-        printf("Response sent, closing cfd!\n\n");
-        close(cfd);
-        exit(0);
+        // Attempt to open file
+        char buffer[1024]; // Buffer to store data
+        // r+ prevents opening a directory
+        FILE *file = fopen(path, "r+");
+
+        // GET, HEAD, and DELETE methods require our file to exist
+        if (IS_GET || IS_HEAD || IS_DELETE)
+        {
+            if (!file)
+            {
+                printf("Invalid request: Resource '%s' was not found, closing the connection.\n", url);
+                write(cfd, "HTTP/1.1 404 Not found\r\n\r\n", 27);
+                close(cfd);
+                exit(0);
+            }
+        }
+
+        // Check if our method is supported
+        // We use strncmp and strlen for memory safe comparison
+        if (IS_GET)
+        {
+            printf("GET is supported!\n");
+
+            // If file exists, process it and return in response
+            int buffer_size = fread(&buffer, sizeof(char), 1024, file);
+            fclose(file);
+
+            char response_headers[1024] = {0};
+            strcpy(response_headers, "HTTP/1.1 200 OK\r\n");
+
+            char content_length_header[64];
+            sprintf(content_length_header, "Content-Length: %d\r\n", buffer_size);
+            strcat(response_headers, content_length_header);
+
+            strcat(response_headers, "Connection: close\r\n");
+            strcat(response_headers, "Content-Type: application/octet-stream\r\n");
+            strcat(response_headers, "Content-Disposition: attachment\r\n");
+            strcat(response_headers, "\r\n");
+            write(cfd, response_headers, strlen(response_headers));
+            printf("\n\n%s%s\n\n", response_headers, buffer);
+            write(cfd, buffer, buffer_size);
+            printf("Response sent, closing cfd!\n\n");
+            close(cfd);
+
+            exit(0);
+        }
+        else if (IS_PUT)
+        {
+            printf("PUT is supported!\n");
+        }
+        else if (IS_HEAD)
+        {
+            printf("HEAD is supported!\n");
+
+            // If file exists, process it and return in response
+            int buffer_size = fread(&buffer, sizeof(char), 1024, file);
+            fclose(file);
+
+            // Create response string
+            size_t base_headers_length = 81;
+
+            char content_length_header[29];
+            sprintf(content_length_header, "Content-Length: %d\r\n", buffer_size);
+
+            char res[base_headers_length];
+            strcpy(res, "HTTP/1.1 200 OK\r\n");
+            strcat(res, content_length_header);
+            strcat(res, "Connection: close\r\n");
+            strcat(res, "Content-Type: application/octet-stream\r\n\r\n");
+
+            // Send response string
+            printf("Attempting to send a response...\n");
+            write(cfd, res, base_headers_length);
+            printf("Response sent, closing cfd!\n\n");
+            close(cfd);
+
+            exit(0);
+        }
+        else if (IS_DELETE)
+        {
+            printf("DELETE is supported!\n");
+            fclose(file);
+
+            if (remove(path) == 0)
+            {
+                printf("Resource '%s' has been successfully deleted, closing the connection.\n", path);
+                write(cfd, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: text/plain\r\n\r\nok", 66);
+                close(cfd);
+                exit(0);
+            }
+
+            printf("Invalid request: Resource '%s' could not be deleted, closing the connection.\n", path);
+            write(cfd, "HTTP/1.1 500 Internal Server Error\r\n\r\n", 38);
+            close(cfd);
+            exit(0);
+        }
 
         // We don't bother with de-allocating dynamically assigned memory (such as body_buf),
         // as the process will get killed anyway
