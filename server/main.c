@@ -118,34 +118,29 @@ int main(int argc, char **argv)
                     header_delimiter_size = 4;
                     break;
                 }
-                else
+
+                // We should also check for LF LF
+                // The reason for a for loop is that for only a single check on a 4-byte region,
+                // we would only check 1 out of 3 possible combinations (XXaa, aXXa, aaXX)
+                for (int x = 0; x < 3; x++)
                 {
-                    // We should also check for \n\n, according to RFC 2616
-                    // This won't be most optimal, as we could only do that for the boundaries,
-                    // but w/e
-
-                    // The reason for a for loop is that for a single check on a 4-byte region,
-                    // we would only check 1 out of 3 possible combinations (XXaa, aXXa, aaXX)
-                    for (int x = 0; x < 3; x++)
+                    if (
+                        buf[i + x] == '\n' && buf[i + x + 1] == '\n')
                     {
-                        if (
-                            buf[i + x] == '\n' && buf[i + x + 1] == '\n')
-                        {
-                            header_delimiter_found = i + x;
-                            header_delimiter_size = 2;
-                            break;
-                        }
-                    }
-
-                    if (header_delimiter_found != -1)
-                    {
+                        header_delimiter_found = i + x;
+                        header_delimiter_size = 2;
                         break;
                     }
+                }
+
+                if (header_delimiter_found != -1)
+                {
+                    break;
                 }
             }
 
             buffer_at += read_n;
-            // Once we found the body, process it in a different loop
+            // Once we found the delimiter, process headers, and process rest of body in a different loop
             if (header_delimiter_found != -1)
             {
                 break;
@@ -301,19 +296,7 @@ int main(int argc, char **argv)
         }
         printf("Headers parsed.\n");
 
-        /*
-        Validate whether Host: header exists
-
-        A client MUST include a Host header field in all HTTP/1.1 request
-        messages . If the requested URI does not include an Internet host
-        name for the service being requested, then the Host header field MUST
-        be given with an empty value. An HTTP/1.1 proxy MUST ensure that any
-        request message it forwards does contain an appropriate Host header
-        field that identifies the service being requested by the proxy. All
-        Internet-based HTTP/1.1 servers MUST respond with a 400 (Bad Request)
-        status code to any HTTP/1.1 request message which lacks a Host header
-        field.
-        */
+        // Validate whether Host: header exists - RFC 2616 makes this header mandatory
         if (!host_header_found)
         {
             printf("Invalid request: Host header missing.\n");
@@ -326,18 +309,8 @@ int main(int argc, char **argv)
         // so we don't waste bandwidth on data that will be discarded due to wrong size
         if (IS_PUT)
         {
-            /*
-            RFC 2616:
-            For compatibility with HTTP/1.0 applications, HTTP/1.1 requests
-            containing a message-body MUST include a valid Content-Length header
-            field unless the server is known to be HTTP/1.1 compliant. If a
-            request contains a message-body and a Content-Length is not given,
-            the server SHOULD respond with 400 (bad request) if it cannot
-            determine the length of the message, or with 411 (length required) if
-            it wishes to insist on receiving a valid Content-Length.
-
-            Let's enforce it only on PUT requests
-            */
+            // RFC 2616 says that we SHOULD respond with 411 if we wish to insist on receiving a valid Content-Length
+            // Let's enforce it only on PUT requests
             if (content_length < 0)
             {
                 printf("Invalid request: Content-Length required, closing the connection.\n");
@@ -425,12 +398,7 @@ int main(int argc, char **argv)
         fclose(body_stream);
 
         /*
-        RFC 2616:
-        When a Content-Length is given in a message where a message-body is
-        allowed, its field value MUST exactly match the number of OCTETs in
-        the message-body. HTTP/1.1 user agents MUST notify the user when an
-        invalid length is received and detected.
-
+        RFC 2616: HTTP/1.1 user agents MUST notify the user when an invalid length is received and detected.
         We'll send a 400 Bad Request to ensure the client is extra-compliant :-)
         */
         if (body_buf_size != content_length && content_length != -1)
@@ -440,15 +408,6 @@ int main(int argc, char **argv)
             write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
             close(cfd);
             exit(0);
-        }
-
-        if (body_buf_size > 0)
-        {
-            printf("\nRaw body data:\n>>>>>\n%s\n<<<<<\n", body_buf);
-        }
-        else
-        {
-            printf("\nEmpty body.\n");
         }
 
         // Concat url parameter to SERVER_RESOURCES_PATH
@@ -539,8 +498,8 @@ int main(int argc, char **argv)
         close(cfd);
         exit(0);
 
-        // We don't bother with de-allocating dynamically assigned memory (such as body_buf),
-        // as the process will get killed anyway
+        // We don't bother with de-allocating dynamically assigned memory
+        // (such as body_buf), as the process will get killed anyway
     }
     close(sfd);
 }
