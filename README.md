@@ -1,6 +1,4 @@
-# Sieci komputerowe 2
-
-## Prosty serwer i klient HTTP 
+# Prosty serwer i klient HTTP 
 
 Projekt stworzony na potrzeby laboratorium Sieci komputerowe 2 w semestrze zimowym 2023/2024.
 
@@ -16,16 +14,17 @@ curl --header "Content-Type: application/octet-stream" -i -X PUT --data-binary @
 
 TODO
 
-### Struktura plików
-
-TODO
-
 ### Uruchomienie 
 
 ```bash
 cd server
 ./run.sh
 ```
+
+### Struktura plików
+
+TODO
+
 
 ## Klient (Windows)
 
@@ -35,6 +34,13 @@ Do komunikacji z serwerem posługuje się biblioteką `sockets`, która pod Wind
 
 Pakiet `eel` do wyświetlania GUI wykorzystuje Chromium. **Przeglądarka nie wykonuje żadnych zapytań do serwera, odpowiada wyłącznie za aspekt wizualny.** Za komunikację z serwerem odpowiadają wyłącznie sockety, zgodnie z wymaganiami zadania.
 
+### Uruchomienie
+```bat
+cd client
+pip install -r requirements.txt
+run.cmd
+```
+
 ### Struktura plików
 
 - **main.py** - glówna część, uruchomiająca GUI oraz przetwarzająca jego komendy
@@ -43,13 +49,8 @@ Pakiet `eel` do wyświetlania GUI wykorzystuje Chromium. **Przeglądarka nie wyk
 - web/ - pliki serwowane przez eel
   - **web/index.html** - frontend klienta
 
-### Uruchomienie
-```bat
-cd client
-pip install -r requirements.txt
-run.cmd
-```
-### Często spotykane błędy
+
+### Troubleshooting
 
 W przypadku błędu `OSError: Can't find Google Chrome/Chromium installation`, klient musi mieć zainstalowanego Chrome. 
 
@@ -60,11 +61,21 @@ import eel.browsers
 eel.browsers.set_path('chrome', '/path/to/your/exe')
 ```
 
-## Opis protokołu HTTP
+## Protokół serwer - klient
 
-TODO
+TODO (chyba jednak nie opis samego HTTP)
+
+
+## Istotne funkcjonalności
+- Zabezpieczenie przed atakiem directory traversal (GET ../../../../../../etc/passwd)
+- Konfigurowalny maksymalny limit pliku
+- Zabezpieczenie przed przepełnieniem RAM poprzez uniemożliwienie przesłania gigantycznego payloadu
+- Obsługa nagłówka 100 Continue
+- Przetwarzanie nagłówków z delimeterem zarówno CRLF jak i LF, zgodnie z pkt 10.3 RFC 2616
+- TODO: Wymuszanie nagłówka Host:, zgodnie z pkt 19.6.1.1 RFC 2616
 
 ---
+
 
 ## Wymagania 
 
@@ -100,7 +111,6 @@ TODO
 ## Potencjalne usprawnienia
 
 - Ograniczenie liczby jednoczesnych połączeń - aktualnie bardzo łatwo jest zDoSować nasz serwer
-- Ograniczenie rozmiaru przesyłanego pliku
 
 ## Autorzy
 

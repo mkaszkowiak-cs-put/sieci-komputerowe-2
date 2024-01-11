@@ -242,20 +242,15 @@ int main(int argc, char **argv)
                 break;
             }
 
-            // Currently redundant, TODO: check if will be used
-            char header_copy[BUFFER_SIZE];
-            strncpy(header_copy, header, BUFFER_SIZE);
-
             // Header now should hold a key:value pair
             // For the sake of simplicity, we're going to assume that there is a single trailing space
             // Though the RFC spec says that there may be 0 or multiple trailing spaces
 
-            char *key = strtok(header_copy, ": ");
+            char *key = strtok(header, ": ");
             char *value = strtok(NULL, ": ");
-
-            // Parser currently only reads up to first ' ', due to strtok's behaviour
-            // TODO: fix this
+            // BUG: Parser currently only reads up to first ' ', due to strtok's behaviour
             // https://stackoverflow.com/questions/60803240/so-strtok-is-destructive
+
             if (header_delimiter_size == 4)
             {
 
@@ -422,7 +417,7 @@ int main(int argc, char **argv)
             }
 
             printf("Invalid request: Resource '%s' could not be deleted, closing the connection.\n", path);
-            write(cfd, "HTTP/1.1 501 Internal server error\r\n\r\n", 38);
+            write(cfd, "HTTP/1.1 500 Internal Server Error\r\n\r\n", 38);
             close(cfd);
             exit(0);
         }
@@ -444,22 +439,7 @@ int main(int argc, char **argv)
         // Check how many bytes we can still read from buf
         int existing_body_size = buffer_at - existing_body_start_pos;
 
-        // Check if body_size matches content-length header
-        /*
-        RFC 2616:
-        When a Content-Length is given in a message where a message-body is
-        allowed, its field value MUST exactly match the number of OCTETs in
-        the message-body. HTTP/1.1 user agents MUST notify the user when an
-        invalid length is received and detected.
-        */
-        if (existing_body_size != content_length)
-        {
-            printf("Invalid request: Body size is different than Content-Length header '%d', closing the connection.\n", existing_body_size);
-            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
-            close(cfd);
-            exit(0);
-        }
-
+        // Data is still left in buf - copy it to our body_buf
         if (existing_body_size > 0)
         {
             // Get pointer to the first byte of body
@@ -471,7 +451,8 @@ int main(int argc, char **argv)
         }
 
         // If "Expect: 100-continue" header exists, we need to send a 100 Continue response
-        // This is used for transmitting files
+        // This is used for transmitting files, for ex. when making a curl request:
+        // curl --header "Content-Type:application/octet-stream" -i -X PUT --data-binary @filename localhost:2138/file
         char *continue100 = "\nExpect: 100-continue";
         if (strstr(header_buf, continue100) != NULL)
         {
@@ -483,20 +464,49 @@ int main(int argc, char **argv)
         printf("\nReading body bytes:");
         while (1)
         {
-            // Read body
+            // Read body until no more data is received
             read_n = read(cfd, buf, BUFFER_SIZE);
             printf(" %d", read_n);
 
-            // No bytes left to read? Exit the loop
             if (read_n <= 0)
             {
                 break;
             }
 
+            // Content-Length is already guaranteed to be less than MAXIMUM_CONTENT_LENGTH,
+            // So let's just check if the client doesn't send more data than Content-Length
+            if (body_buf_size > content_length)
+            {
+                printf("Invalid request: Body size '%zu' is different than Content-Length header '%d', closing the connection.\n",
+                       body_buf_size, content_length);
+                write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
+                close(cfd);
+                exit(0);
+            }
+
             fwrite(buf, read_n, 1, body_stream);
         }
         printf("...done\n");
-        fflush(body_stream);
+        // Free resources - fclose also flushes the stream
+        fclose(body_stream);
+
+        /*
+        RFC 2616:
+        When a Content-Length is given in a message where a message-body is
+        allowed, its field value MUST exactly match the number of OCTETs in
+        the message-body. HTTP/1.1 user agents MUST notify the user when an
+        invalid length is received and detected.
+
+        We'll send a 400 Bad Request to ensure the client is extra-compliant :-)
+        */
+        if (body_buf_size != content_length)
+        {
+            printf("Invalid request: Body size '%zu' is different than Content-Length header '%d', closing the connection.\n",
+                   body_buf_size, content_length);
+            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
+            close(cfd);
+            exit(0);
+        }
 
         if (body_buf_size > 0)
         {
@@ -506,10 +516,6 @@ int main(int argc, char **argv)
         {
             printf("\nEmpty body.\n");
         }
-
-        // Free resources
-        fclose(body_stream);
-        free(body_buf);
 
         // TODO: read body limited to Content-Length
         // TODO: appropriate function calls
@@ -524,6 +530,9 @@ int main(int argc, char **argv)
         printf("Response sent, closing cfd!\n\n");
         close(cfd);
         exit(0);
+
+        // We don't bother with de-allocating dynamically assigned memory (such as body_buf),
+        // as the process will get killed anyway
     }
     close(sfd);
 }
