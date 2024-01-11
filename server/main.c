@@ -258,18 +258,20 @@ int main(int argc, char **argv)
                 continue;
             }
 
-            if (strcmp(key, "Content-Length") == 0) {
+            if (strcmp(key, "Content-Length") == 0)
+            {
                 content_length = atoi(value);
             }
-
 
             printf("[Header] %s: %s\n", key, value);
         }
         printf("Headers parsed.\n");
 
-        if (strncmp(method, "PUT", 3) == 0 && strlen(method) == 3) {
+        if (strncmp(method, "PUT", 3) == 0 && strlen(method) == 3)
+        {
             // Check if content-length was provided
-            if (content_length < 0) {
+            if (content_length < 0)
+            {
                 printf("Invalid request: Content-Length required, closing the connection.\n");
                 write(cfd, "HTTP/1.1 411 Length Required\r\n\r\n", 32);
                 close(cfd);
@@ -277,7 +279,8 @@ int main(int argc, char **argv)
             }
 
             // Check if content-length is lower than MAXIMUM_CONTENT_LENGTH
-            if (content_length > MAXIMUM_CONTENT_LENGTH) {
+            if (content_length > MAXIMUM_CONTENT_LENGTH)
+            {
                 printf("Invalid request: Content-Length exceeds MAXIMUM-CONTENT-LENGTH '%d', closing the connection.\n", content_length);
                 write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
                 close(cfd);
@@ -293,7 +296,8 @@ int main(int argc, char **argv)
 
             // Temporary condition, so previously implemented tests still work
             // Below code is being executed for routes besides "/"
-            if (strcmp(url, "/") != 0) {
+            if (strcmp(url, "/") != 0)
+            {
                 // Concat url parameter to SERVER_RESOURCES_PATH
                 char path[strlen(SERVER_RESOURCES_PATH) + strlen(url)];
                 strcpy(path, SERVER_RESOURCES_PATH);
@@ -305,7 +309,8 @@ int main(int argc, char **argv)
                 file = fopen(path, "r");
 
                 // If file exists, process it and return in response
-                if (file) {
+                if (file)
+                {
                     int buffer_size = fread(&buffer, sizeof(char), 1024, file);
                     fclose(file);
 
@@ -328,7 +333,9 @@ int main(int argc, char **argv)
                     close(cfd);
 
                     exit(0);
-                } else {
+                }
+                else
+                {
                     // handle not existing file
                     printf("Invalid request: Resource '%s' was not found, closing the connection.\n", url);
                     write(cfd, "HTTP/1.1 404 Not found\r\n\r\n", 27);
@@ -340,7 +347,6 @@ int main(int argc, char **argv)
         else if (strncmp(method, "PUT", 3) == 0 && strlen(method) == 3)
         {
             printf("PUT is supported!\n");
-
         }
         else if (strncmp(method, "HEAD", 4) == 0 && strlen(method) == 4)
         {
@@ -348,7 +354,8 @@ int main(int argc, char **argv)
 
             // Temporary condition, so previously implemented tests still work
             // Below code is being executed for routes besides "/"
-            if (strcmp(url, "/") != 0) {
+            if (strcmp(url, "/") != 0)
+            {
                 // Concat url parameter to SERVER_RESOURCES_PATH
                 char path[strlen(SERVER_RESOURCES_PATH) + strlen(url)];
                 strcpy(path, SERVER_RESOURCES_PATH);
@@ -360,7 +367,8 @@ int main(int argc, char **argv)
                 file = fopen(path, "r");
 
                 // If file exists, process it and return in response
-                if (file) {
+                if (file)
+                {
                     int buffer_size = fread(&buffer, sizeof(char), 1024, file);
                     fclose(file);
 
@@ -382,7 +390,9 @@ int main(int argc, char **argv)
                     close(cfd);
 
                     exit(0);
-                } else {
+                }
+                else
+                {
                     // handle not existing file
                     printf("Invalid request: Resource '%s' was not found, closing the connection.\n", url);
                     write(cfd, "HTTP/1.1 404 Not found\r\n\r\n", 27);
@@ -404,13 +414,16 @@ int main(int argc, char **argv)
             FILE *file;
             int file_exists = 0;
 
-            if ((file = fopen(path, "r"))) {
+            if ((file = fopen(path, "r")))
+            {
                 printf("\n\n File exists! \n\n");
                 file_exists = 1;
             }
 
-            if (file_exists) {
-                if (remove(path) == 0) {
+            if (file_exists)
+            {
+                if (remove(path) == 0)
+                {
                     printf("Resource '%s' has been successfully deleted, closing the connection.\n", path);
                     write(cfd, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: text/plain\r\n\r\nok", 66);
                     close(cfd);
@@ -421,7 +434,9 @@ int main(int argc, char **argv)
                 write(cfd, "HTTP/1.1 501 Internal server error\r\n\r\n", 38);
                 close(cfd);
                 exit(0);
-            } else {
+            }
+            else
+            {
                 printf("Invalid request: Resource '%s' was not found, closing the connection.\n", url);
                 write(cfd, "HTTP/1.1 404 Not found\r\n\r\n", 27);
                 close(cfd);
@@ -454,7 +469,8 @@ int main(int argc, char **argv)
         int existing_body_size = buffer_at - existing_body_start_pos;
 
         // Check if body_size matches content-length header
-        if (existing_body_size != content_length) {
+        if (existing_body_size != content_length)
+        {
             printf("Invalid request: Body size is different than Content-Length header '%d', closing the connection.\n", existing_body_size);
             write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
             close(cfd);

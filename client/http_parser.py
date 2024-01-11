@@ -22,7 +22,6 @@ def parse_response(response):
     """Parses a string response and returns a Response class."""
 
     """
-    I'm not entirely sure whether the delimiter should be \r\n\r\n, or \n\n.
     Citing RFC2616, 19.3 Tolerant Applications:
 
     The line terminator for message-header fields is the sequence CRLF. 
