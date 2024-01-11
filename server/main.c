@@ -186,7 +186,6 @@ int main(int argc, char **argv)
         char *method = strtok(header_buf2, " ");
         char *url = strtok(NULL, " ");
         char *version = strtok(NULL, " ");
-        int content_length = -1;
 
         if (method == NULL || url == NULL || version == NULL)
         {
@@ -197,6 +196,20 @@ int main(int argc, char **argv)
         }
 
         printf("%s %s %s\n", method, url, version);
+
+        // Prevent unsupported method requests
+        int IS_GET = strncmp(method, "GET", 3) == 0 && strlen(method) == 3;
+        int IS_PUT = strncmp(method, "PUT", 3) == 0 && strlen(method) == 3;
+        int IS_HEAD = strncmp(method, "HEAD", 4) == 0 && strlen(method) == 4;
+        int IS_DELETE = strncmp(method, "DELETE", 6) == 0 && strlen(method) == 6;
+
+        if (!(IS_GET || IS_PUT || IS_HEAD || IS_DELETE))
+        {
+            printf("Invalid request: unsupported HTTP method '%s', closing the connection.\n", method);
+            write(cfd, "HTTP/1.1 405 Method Not Allowed\r\n\r\n", 35);
+            close(cfd);
+            exit(0);
+        }
 
         // Our server deals with files on all 4 methods - GET, HEAD, PUT and DELETE
         // For each method the path determines a path to a file
@@ -233,6 +246,9 @@ int main(int argc, char **argv)
         }
 
         printf("\n\nParsing headers...\n");
+
+        int content_length = -1;
+        int host_header_found = 0;
         while (1)
         {
             if (header == NULL)
@@ -275,11 +291,39 @@ int main(int argc, char **argv)
                 content_length = atoi(value);
             }
 
+            if (strcmp(key, "Host") == 0)
+            {
+                host_header_found = 1;
+            }
+
             printf("[Header] %s: %s\n", key, value);
         }
         printf("Headers parsed.\n");
 
-        if (strncmp(method, "PUT", 3) == 0 && strlen(method) == 3)
+        /*
+        Validate whether Host: header exists
+
+        A client MUST include a Host header field in all HTTP/1.1 request
+        messages . If the requested URI does not include an Internet host
+        name for the service being requested, then the Host header field MUST
+        be given with an empty value. An HTTP/1.1 proxy MUST ensure that any
+        request message it forwards does contain an appropriate Host header
+        field that identifies the service being requested by the proxy. All
+        Internet-based HTTP/1.1 servers MUST respond with a 400 (Bad Request)
+        status code to any HTTP/1.1 request message which lacks a Host header
+        field.
+        */
+        if (!host_header_found)
+        {
+            printf("Invalid request: Host header missing.\n");
+            write(cfd, "HTTP/1.1 400 Bad Request\r\n\r\n", 28);
+            close(cfd);
+            exit(0);
+        }
+
+        // Validate Content-Length prior to reading body,
+        // so we don't waste bandwidth on data that will be discarded due to wrong size
+        if (IS_PUT)
         {
             /*
             RFC 2616:
@@ -404,19 +448,6 @@ int main(int argc, char **argv)
         else
         {
             printf("\nEmpty body.\n");
-        }
-
-        int IS_GET = strncmp(method, "GET", 3) == 0 && strlen(method) == 3;
-        int IS_PUT = strncmp(method, "PUT", 3) == 0 && strlen(method) == 3;
-        int IS_HEAD = strncmp(method, "HEAD", 4) == 0 && strlen(method) == 4;
-        int IS_DELETE = strncmp(method, "DELETE", 6) == 0 && strlen(method) == 6;
-
-        if (!(IS_GET || IS_PUT || IS_HEAD || IS_DELETE))
-        {
-            printf("Invalid request: unsupported HTTP method '%s', closing the connection.\n", method);
-            write(cfd, "HTTP/1.1 405 Method Not Allowed\r\n\r\n", 35);
-            close(cfd);
-            exit(0);
         }
 
         // Concat url parameter to SERVER_RESOURCES_PATH

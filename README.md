@@ -73,7 +73,7 @@ TODO (chyba jednak nie opis samego HTTP)
 - Zabezpieczenie przed przepełnieniem RAM poprzez uniemożliwienie przesłania gigantycznego payloadu
 - Obsługa nagłówka 100 Continue
 - Przetwarzanie nagłówków z delimeterem zarówno CRLF jak i LF, zgodnie z pkt 10.3 RFC 2616
-- TODO: Wymuszanie nagłówka Host:, zgodnie z pkt 19.6.1.1 RFC 2616
+- Wymuszanie nagłówka Host:, zgodnie z pkt 19.6.1.1 RFC 2616
 ---
 
 
