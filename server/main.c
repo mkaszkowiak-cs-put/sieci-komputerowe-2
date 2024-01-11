@@ -478,15 +478,16 @@ int main(int argc, char **argv)
         {
             printf("GET is supported!\n");
 
-            // If file exists, process it and return in response
-            int buffer_size = fread(&buffer, sizeof(char), 1024, file);
-            fclose(file);
+            // Determine file size
+            fseek(file, 0, SEEK_END);
+            long filesize = ftell(file);
+            fseek(file, 0, SEEK_SET);
 
             char response_headers[1024] = {0};
             strcpy(response_headers, "HTTP/1.1 200 OK\r\n");
 
             char content_length_header[64];
-            sprintf(content_length_header, "Content-Length: %d\r\n", buffer_size);
+            sprintf(content_length_header, "Content-Length: %ld\r\n", filesize);
             strcat(response_headers, content_length_header);
 
             strcat(response_headers, "Connection: close\r\n");
@@ -494,10 +495,15 @@ int main(int argc, char **argv)
             strcat(response_headers, "Content-Disposition: attachment\r\n");
             strcat(response_headers, "\r\n");
             write(cfd, response_headers, strlen(response_headers));
-            printf("\n\n%s%s\n\n", response_headers, buffer);
-            write(cfd, buffer, buffer_size);
+
+            size_t bytesRead;
+            while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0)
+            {
+                write(cfd, buffer, bytesRead);
+            }
             printf("Response sent, closing cfd!\n\n");
             close(cfd);
+            fclose(file);
 
             exit(0);
         }
