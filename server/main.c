@@ -198,6 +198,7 @@ int main(int argc, char **argv)
         printf("%s %s %s\n", method, url, version);
 
         // Prevent unsupported method requests
+        // We use strncmp and strlen for memory safe comparison
         int IS_GET = strncmp(method, "GET", 3) == 0 && strlen(method) == 3;
         int IS_PUT = strncmp(method, "PUT", 3) == 0 && strlen(method) == 3;
         int IS_HEAD = strncmp(method, "HEAD", 4) == 0 && strlen(method) == 4;
@@ -472,13 +473,11 @@ int main(int argc, char **argv)
             }
         }
 
-        // Check if our method is supported
-        // We use strncmp and strlen for memory safe comparison
-        if (IS_GET)
+        // GET and HEAD send the same headers
+        if (IS_GET || IS_HEAD)
         {
-            printf("GET is supported!\n");
-
-            // Determine file size
+            printf("Sending headers for GET or HEAD\n");
+            // Determine file size for Content-Length header
             fseek(file, 0, SEEK_END);
             long filesize = ftell(file);
             fseek(file, 0, SEEK_SET);
@@ -492,71 +491,53 @@ int main(int argc, char **argv)
 
             strcat(response_headers, "Connection: close\r\n");
             strcat(response_headers, "Content-Type: application/octet-stream\r\n");
+            // Change from attachment to inline, if you wish for the file to be displayed in browser
             strcat(response_headers, "Content-Disposition: attachment\r\n");
             strcat(response_headers, "\r\n");
+
+            // Send headers
             write(cfd, response_headers, strlen(response_headers));
+        }
+
+        if (IS_GET)
+        {
+            printf("Sending body for GET\n");
 
             size_t bytesRead;
             while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0)
             {
                 write(cfd, buffer, bytesRead);
             }
-            printf("Response sent, closing cfd!\n\n");
-            close(cfd);
-            fclose(file);
-
-            exit(0);
-        }
-        else if (IS_PUT)
-        {
-            printf("PUT is supported!\n");
-        }
-        else if (IS_HEAD)
-        {
-            printf("HEAD is supported!\n");
-
-            // If file exists, process it and return in response
-            int buffer_size = fread(&buffer, sizeof(char), 1024, file);
-            fclose(file);
-
-            // Create response string
-            size_t base_headers_length = 81;
-
-            char content_length_header[29];
-            sprintf(content_length_header, "Content-Length: %d\r\n", buffer_size);
-
-            char res[base_headers_length];
-            strcpy(res, "HTTP/1.1 200 OK\r\n");
-            strcat(res, content_length_header);
-            strcat(res, "Connection: close\r\n");
-            strcat(res, "Content-Type: application/octet-stream\r\n\r\n");
-
-            // Send response string
-            printf("Attempting to send a response...\n");
-            write(cfd, res, base_headers_length);
-            printf("Response sent, closing cfd!\n\n");
-            close(cfd);
-
-            exit(0);
         }
         else if (IS_DELETE)
         {
             printf("DELETE is supported!\n");
             fclose(file);
 
-            if (remove(path) == 0)
+            if (remove(path) != 0)
+            {
+                printf("Invalid request: Resource '%s' could not be deleted, closing the connection.\n", path);
+                write(cfd, "HTTP/1.1 500 Internal Server Error\r\n\r\n", 38);
+            }
+            else
             {
                 printf("Resource '%s' has been successfully deleted, closing the connection.\n", path);
                 write(cfd, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: text/plain\r\n\r\nok", 66);
-                close(cfd);
-                exit(0);
             }
-
-            printf("Invalid request: Resource '%s' could not be deleted, closing the connection.\n", path);
-            write(cfd, "HTTP/1.1 500 Internal Server Error\r\n\r\n", 38);
-            close(cfd);
-            exit(0);
         }
+        else if (IS_PUT)
+        {
+            printf("PUT is supported! \n");
+        }
+
+        // DELETE closes file descriptor earlier on
+        if (IS_HEAD || IS_GET || IS_PUT)
+        {
+            fclose(file);
+        }
+
+        close(cfd);
+        exit(0);
 
         // We don't bother with de-allocating dynamically assigned memory (such as body_buf),
         // as the process will get killed anyway
