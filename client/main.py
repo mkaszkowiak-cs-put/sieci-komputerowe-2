@@ -64,7 +64,7 @@ def put_homepage(path, *args):
     return encode_response(parsed_response)
 
 @eel.expose
-def getPathToFile(wildcard="*"):
+def upload_file_homepage(wildcard="*"):
     # Python handles file dialog and returns path of the selected file
     app = wx.App(None)
     style = wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
