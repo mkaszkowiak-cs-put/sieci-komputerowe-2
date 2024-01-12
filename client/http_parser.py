@@ -34,7 +34,7 @@ def parse_response(response):
     
     if delimiter == -1:
         # Cannot find a delimiter - invalid HTTP request, exiting
-        return Response(response, False, None, None, None)
+        return Response(response, False, None, None, None, None)
 
 
     body = response[delimiter+delimiter_length:]
