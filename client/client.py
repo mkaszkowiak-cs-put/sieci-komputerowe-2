@@ -1,6 +1,5 @@
 import socket
 
-
 # TODO: is .decode() without parameters OK? It decodes into UTF-8 by default, but in reality we're using ASCII.
 
 SERVER_ADDRESS = ('localhost', 2138)
@@ -61,9 +60,8 @@ def create_put_request(path, body):
     payload += f"Content-Length: {len(body)}\r\n"
     # Required, as HTTP 1.1 by default should support persistent connections
     payload += f"Connection: close\r\n\r\n"
-    payload += body
 
-    return str.encode(payload)
+    return payload.encode() + body
 
 def read_socket(sock):
     """
@@ -125,7 +123,7 @@ def put_homepage(path, uploadedFilePath):
     uploadedFileContent = None
 
     try:
-        uploadedFile = open(uploadedFilePath)
+        uploadedFile = open(uploadedFilePath, "rb")
         uploadedFileContent = uploadedFile.read()
         uploadedFile.close()
     except:
