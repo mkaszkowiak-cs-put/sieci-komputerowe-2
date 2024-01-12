@@ -31,9 +31,14 @@ def helloworld():
 def get_homepage(path):
     print(f"Calling GET /{path}")
     response = client.get_homepage(path)
-    print(response)
-
     parsed_response = http_parser.parse_response(response)
+
+    if (len(parsed_response.body) > 100):
+        print(parsed_response.headers_raw)
+        print("\nSkipping body print, body is over 100 characters.")
+    else:
+        print(response)
+    
     return encode_response(parsed_response)
 
 @eel.expose

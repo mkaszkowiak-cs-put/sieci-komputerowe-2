@@ -76,7 +76,7 @@ def read_socket(sock):
             break
         data += buf
     
-    return data.decode()
+    return data.decode('ISO-8859-1')
 
 def get_homepage(path):
     """

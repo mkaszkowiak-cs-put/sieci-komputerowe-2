@@ -9,6 +9,7 @@ class Response:
     content_length: Optional[int]
     body: Optional[str] 
     headers: Optional[dict]
+    headers_raw: Optional[str]
     code: int
     
     def __str__(self):
@@ -34,7 +35,7 @@ def parse_response(response):
     
     if delimiter == -1:
         # Cannot find a delimiter - invalid HTTP request, exiting
-        return Response(response, False, None, None, None, None)
+        return Response(response, False, None, None, None, None, None)
 
 
     body = response[delimiter+delimiter_length:]
@@ -64,10 +65,10 @@ def parse_response(response):
         content_length = int(headers['Content-Length'])
     except:
         # Cannot find or parse a Content-Length header - invalid HTTP request, exiting
-        return Response(response, False, None, body, headers, code)
+        return Response(response, False, None, body, headers, headers_raw, code)
 
     # We don't check if Content-Length matches, 
     # let's just live in our happy little world without checks
     # and without trimming the remaining content past Content-Length
 
-    return Response(response, True, content_length, body, headers, code)
+    return Response(response, True, content_length, body, headers, headers_raw, code)
