@@ -4,15 +4,31 @@ Projekt stworzony na potrzeby laboratorium Sieci komputerowe 2 w semestrze zimow
 
 ## Serwer (GNU/Linux)
 
-Serwer jest zaimplementowany w C i został przetestowany pod systemem GNU/Linux (TODO: jakie distro?).
+Serwer jest zaimplementowany w C i został przetestowany pod systemami GNU/Linux (Ubuntu 20.04.6 LTS) i MacOS 14.
 
 Serwer został zaimplementowany zgodnie z RFC 2616, przez co można z niego korzystać za pośednictwem serwera lub curl, np:
 
+### GET
 ```
-curl --header "Content-Type: application/octet-stream" -i -X PUT --data-binary @plik localhost:2138
+curl -i localhost:2138/<sciezka>
 ```
 
-TODO
+### HEAD
+```
+curl -i -X HEAD localhost:2138/<sciezka>
+```
+
+### PUT
+```
+curl --header "Content-Type: application/octet-stream" -i -X PUT --data-binary @plik localhost:2138/<sciezka>
+```
+
+### DELETE
+```
+curl -i -X DELETE localhost:2138/<sciezka>
+```
+
+Serwer działa na zasadzie forkowania; tworzy nowy proces potomny (dziecko) dla każdego przychodzącego połączenia.
 
 ### Uruchomienie 
 
@@ -23,12 +39,12 @@ cd server
 
 ### Struktura plików
 
-TODO
-
+- **main.c** - glówna część, uruchomiająca serwer i nasłuchująca na zapytania klienta
+- **resources/** - Zasoby na których klient może wykonywać operacje GET, HEAD, PUT, DELETE
 
 ## Klient (Windows)
 
-Klient jest zaimplementowany w Python 3.9 i został przetestowany pod systemem Windows 10. 
+Klient jest zaimplementowany w Python 3.9 i został przetestowany pod systemem Windows 10.
 
 Do komunikacji z serwerem posługuje się biblioteką `sockets`, która pod Windowsem wykorzystuje interfejs WinSock. GUI wykorzystuje bibliotekę `eel`, która jest Pythonowym odpowiednikiem Electrona.
 
@@ -63,20 +79,24 @@ eel.browsers.set_path('chrome', '/path/to/your/exe')
 
 ## Protokół serwer - klient
 
-TODO (chyba jednak nie opis samego HTTP)
+Zapytania do bazy wymagają nagłówka HOST zgodnie z http rfc 2616.
 
-Tu myślę trzeba napisać, że np:
-- GET /<sciezka do pliku> 
-    - zwraca to i to 
+### Ogólne zasady:
+  - Wspierane metody to GET, HEAD, PUT, DELETE, gdy spróbujemy skorzystać z innej otrzymamy błąd 405 Method Not Allowed.
+  - W przypadku gdy podamy nie istniejącą sciezke dla zapytań GET, HEAD, DELETE otrzymamy błąd 404 Not Found.
 
-- PUT /<sciezka do pliku>
-    - body to i to
-    - efekt taki i taki 
+  - ```GET /<sciezka do pliku>```
+    - Pobierze treść pliku zlokalizowanego w folderze zasobów, mającego format binarny "application/octet-stream". Klient odbiera odpowiedź od serwera i prezentuje wynik wraz z nagłówkami w interfejsie graficznym (GUI).
 
-itd itd
+  - ```HEAD /<sciezka do pliku>```
+    - Pobierze informacje o pliku zlokalizowanego w katalogu zasobów. Klient otrzyma odpowiedź z serwera, ale nie pobierze faktycznej zawartości pliku, a jedynie nagłówki, które zostaną wyświetlone w interfejsie graficznym (GUI).
 
-oraz moze troszke ze spelnia http rfc 2616? ze wymagany naglowek host, ze content-length poprawny na put, itd itp
+  - ```PUT /<sciezka do pliku>```
+    - Przekazany plik w body w postaci binarnej zostaje odebrany przez serwer i umieszcza go pod wybrana ściezką w folderze zasobów. W przypadku gdy plik juz istniał zostaje zastąpiony nową wersją pliku.
+    - Przy korzystaniu z metody wymagany jest nagłówek Content-Length zawierający prawidłową wartość w innym przypadku serwer zwróci 400 Bad Request. W przypadku gdy nagłówek nie zostanie podany otrzymamy 411 Length Required.
 
+  - ```DELETE /<sciezka do pliku>```
+    - Serwer podejmuje próbę usunięcia pliku podanego w ściezce, w przypadku gdy plik istnieje zostanie on usunięty i serwer wyśle odpowiedź 200 OK.
 
 ## Istotne funkcjonalności
 - Zabezpieczenie przed atakiem directory traversal (GET ../../../../../../etc/passwd)
@@ -102,7 +122,7 @@ oraz moze troszke ze spelnia http rfc 2616? ze wymagany naglowek host, ze conten
 - Kody projektów muszą być utrzymywane w repozytorium git2 w systemie GitLab: https://gitlab.cs.put.poznan.pl.
 - Wszystkie programy muszą się poprawnie i bez ostrzeżeń (z opcją -Wall dla języków C i C++) kompilować na komputerach laboratoryjnych
 - Podczas zaliczania, programy będą uruchamiane tylko na komputerach laboratoryjnych (wyjątkiem są urządzenia mobilne)
--  Programy muszą być napisane w sposób czytelny i przejrzysty, należy umieszczać stosowne komentarze w kodzie, a także warto stosować styl kodowania wypracowany przez firmę Google
+- Programy muszą być napisane w sposób czytelny i przejrzysty, należy umieszczać stosowne komentarze w kodzie, a także warto stosować styl kodowania wypracowany przez firmę Google
 - Do każdego projektu należy dołączyć krótkie sprawozdanie (maksymalnie jedna strona formatu A4) w formacie PDF lub jako plik README.txt, które ma zostać umieszczone w repozytorium projektu zaliczeniowego. W sprawozdaniu tym należy zawrzeć następujące informacje:
   - temat zadania
   - opis protokołu komunikacyjnego
