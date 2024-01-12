@@ -1,2 +1,2 @@
 eel
-wx
+wxpython
