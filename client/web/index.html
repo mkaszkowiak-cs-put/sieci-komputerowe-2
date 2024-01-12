@@ -117,7 +117,12 @@
             </a>
           </li>
           <li>
-            <a href="#"> PUT - Dodaj plik TODO </a>
+            <a
+              href="#"
+              onclick="eel.put_homepage(getMethodPath(), document.querySelector('#uploadedFile').value)(response_callback)"
+            >
+              PUT
+            </a>
           </li>
           <li>
             <a
@@ -131,9 +136,19 @@
 
         <br /><br />
 
-        <strong>[Input: Wgraj plik TODO]</strong><br />
-        <strong>Aktualnie wgrany plik: TODO</strong><br />
-        <strong>[Input: Nazwa pliku TODO]</strong><br />
+        <div class="row">
+          <button
+            onclick="eel.getPathToFile()(r => { document.querySelector('#uploadedFile').value = r });"
+          >
+            Wgraj plik
+          </button>
+          <button onclick="document.querySelector('#uploadedFile').value = ''">
+            Wyczyść wgrany plik
+          </button>
+        </div>
+        <strong
+          >Aktualnie wgrany plik: <input id="uploadedFile" readonly /></strong
+        ><br />
       </section>
       <section class="column">
         <h3>Odpowiedź serwera</h3>

@@ -52,6 +52,19 @@ def create_head_request(path):
 
     return str.encode(payload)
 
+def create_put_request(path, body):
+    """
+    Constructs a PUT request payload, encoded as a binary sequence.
+    """
+    payload =  f"PUT {path} HTTP/1.1\r\n"
+    payload += f"Host: {SERVER_ADDRESS[0]}:{SERVER_ADDRESS[1]}\r\n"
+    payload += f"Content-Length: {len(body)}\r\n"
+    # Required, as HTTP 1.1 by default should support persistent connections
+    payload += f"Connection: close\r\n\r\n"
+    payload += body
+
+    return str.encode(payload)
+
 def read_socket(sock):
     """
     Reads data from socket until none is returned from recv.
@@ -69,7 +82,7 @@ def read_socket(sock):
 
 def get_homepage(path):
     """
-    Returns the response for GET /
+    Returns the response for GET /path
     """
     payload = create_get_request(f"/{path}")
     sock = connect()
@@ -81,7 +94,7 @@ def get_homepage(path):
 
 def head_homepage(path):
     """
-    Returns the response for HEAD /
+    Returns the response for HEAD /path
     """
     payload = create_head_request(f"/{path}")
     sock = connect()
@@ -93,9 +106,32 @@ def head_homepage(path):
 
 def delete_homepage(path):
     """
-    Returns the response for DELETE /movies
+    Returns the response for DELETE /path
     """
     payload = create_delete_request(f"/{path}")
+    sock = connect()
+    sock.sendall(payload)
+    output = read_socket(sock)
+    sock.close()
+    
+    return output
+
+def put_homepage(path, uploadedFilePath):
+    """
+    Returns the response for PUT /path
+    """
+
+    # Read uploadedFile content
+    uploadedFileContent = None
+
+    try:
+        uploadedFile = open(uploadedFilePath)
+        uploadedFileContent = uploadedFile.read()
+        uploadedFile.close()
+    except:
+        uploadedFileContent = ""
+
+    payload = create_put_request(f"/{path}", uploadedFileContent)
     sock = connect()
     sock.sendall(payload)
     output = read_socket(sock)

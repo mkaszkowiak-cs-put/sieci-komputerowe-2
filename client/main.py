@@ -2,6 +2,7 @@ import eel
 import client
 import http_parser
 import json
+import wx
 
 def encode_response(response: http_parser.Response):
     """
@@ -27,34 +28,53 @@ def helloworld():
     print("Hello World!")
     
 @eel.expose
-def get_homepage(args):
-    print("Calling GET /")
-    response = client.get_homepage(args)
+def get_homepage(path):
+    print(f"Calling GET /{path}")
+    response = client.get_homepage(path)
     print(response)
 
     parsed_response = http_parser.parse_response(response)
     return encode_response(parsed_response)
 
 @eel.expose
-def head_homepage(args):
-    print("Calling HEAD /movies")
-    response = client.head_homepage(args)
+def head_homepage(path):
+    print(f"Calling HEAD /{path}")
+    response = client.head_homepage(path)
     print(response)
 
     parsed_response = http_parser.parse_response(response)
     return encode_response(parsed_response)
 
 @eel.expose
-def delete_homepage(args):
-    print("Calling DELETE /movies")
-    response = client.delete_homepage(args)
+def delete_homepage(path):
+    print(f"Calling DELETE /{path}")
+    response = client.delete_homepage(path)
     print(response)
 
     parsed_response = http_parser.parse_response(response)
     return encode_response(parsed_response)
 
-# TODO: We need a way to send files
-# See: https://stackoverflow.com/questions/59143267/python3-js-how-do-i-handle-local-file-uploads-with-eel
+@eel.expose
+def put_homepage(path, *args):
+    print(f"Calling PUT /{path}")
+    response = client.put_homepage(path, *args)
+    print(response)
+
+    parsed_response = http_parser.parse_response(response)
+    return encode_response(parsed_response)
+
+@eel.expose
+def getPathToFile(wildcard="*"):
+    # Python handles file dialog and returns path of the selected file
+    app = wx.App(None)
+    style = wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+    dialog = wx.FileDialog(None, 'Open', wildcard=wildcard, style=style)
+    if dialog.ShowModal() == wx.ID_OK:
+        path = dialog.GetPath()
+    else:
+        path = None
+    dialog.Destroy()
+    return path
 
 # Remember that functions must be exposed prior to start
 eel.init('web')
