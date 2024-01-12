@@ -6,7 +6,7 @@ Projekt stworzony na potrzeby laboratorium Sieci komputerowe 2 w semestrze zimow
 
 Serwer jest zaimplementowany w C i został przetestowany pod systemami GNU/Linux (Ubuntu 20.04.6 LTS) i MacOS 14.
 
-Serwer został zaimplementowany zgodnie z RFC 2616, przez co można z niego korzystać za pośednictwem serwera lub curl, np:
+Serwer został zaimplementowany zgodnie z RFC 2616, przez co można z niego korzystać za pośrednictwem serwera lub curl, np:
 
 ### GET
 ```
